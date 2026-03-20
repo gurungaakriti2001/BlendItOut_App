@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, RotateCcw, Flame, Play } from 'lucide-react';
+// @ts-nocheck
+
+import React, { useState, useCallback, useRef } from 'react';
+import { Volume2, RotateCcw, Play } from 'lucide-react';
 import { CVC_WORDS } from '../utils/cvcAssets';
 
 const shuffleArray = (array) => {

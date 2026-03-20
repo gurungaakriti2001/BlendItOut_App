@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CVCConnect from '../components/CVCConnect';

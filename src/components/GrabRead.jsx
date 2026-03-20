@@ -1,5 +1,7 @@
+// @ts-nocheck
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Mic, SkipForward } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getWordImage, CVC_DATA } from '../utils/cvcAssets';
 

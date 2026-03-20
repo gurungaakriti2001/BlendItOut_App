@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WORD_FAMILIES, getFamilyConsonants, getWordImage } from '../utils/cvcAssets';

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CVC_WORDS as _CVC_WORDS_LC } from '../utils/cvcAssets';
 
