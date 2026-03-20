@@ -166,12 +166,13 @@ const VowelUFO = ({ data, isSelected, hasSelection, isBlurred, onClick, index })
   );
 };
 
+const B = import.meta.env.BASE_URL.replace(/\/$/, '');
 const VOWELS = [
-  { vowel: 'A', color: '#ff3b30', word: 'APPLE',    image: '/images/cvc/at/cat.jpeg' },
-  { vowel: 'E', color: '#34c759', word: 'ELEPHANT', image: '/images/cvc/en/hen.jpeg' },
-  { vowel: 'I', color: '#58ccfb', word: 'INSECT',   image: '/images/cvc/ig/pig.jpeg' },
-  { vowel: 'O', color: '#ff9500', word: 'OCTOPUS',  image: '/images/cvc/og/dog.jpeg' },
-  { vowel: 'U', color: '#af52de', word: 'UP',       image: '/images/cvc/ug/bug.jpeg' },
+  { vowel: 'A', color: '#ff3b30', word: 'APPLE',    image: `${B}/images/cvc/at/cat.jpeg` },
+  { vowel: 'E', color: '#34c759', word: 'ELEPHANT', image: `${B}/images/cvc/en/hen.jpeg` },
+  { vowel: 'I', color: '#58ccfb', word: 'INSECT',   image: `${B}/images/cvc/ig/pig.jpeg` },
+  { vowel: 'O', color: '#ff9500', word: 'OCTOPUS',  image: `${B}/images/cvc/og/dog.jpeg` },
+  { vowel: 'U', color: '#af52de', word: 'UP',       image: `${B}/images/cvc/ug/bug.jpeg` },
 ];
 
 export default function VowelGalaxy({ onBack, playClick = () => {} }) {

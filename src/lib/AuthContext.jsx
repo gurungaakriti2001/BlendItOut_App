@@ -8,12 +8,14 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
+  const isStatic = !appParams.appId || appParams.appId === 'null';
+  const [isLoadingAuth, setIsLoadingAuth] = useState(!isStatic);
+  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(!isStatic);
   const [authError, setAuthError] = useState(null);
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
   useEffect(() => {
+    if (isStatic) return;
     checkAppState();
   }, []);
 

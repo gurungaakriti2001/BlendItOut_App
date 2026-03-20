@@ -5,6 +5,8 @@
  * getWordImage("cat") => "/images/cvc/at/cat.jpeg"
  */
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 /**
  * Canonical CVC word data — single source of truth.
  * Keys use the "-ab" format; values are arrays of words in that family.
@@ -71,51 +73,51 @@ export function getWordImage(word) {
   const w = word.toLowerCase();
   if (!ALL_WORDS.has(w)) return null;
   const family = w.slice(1);
-  return `/images/cvc/${family}/${w}.jpeg`;
+  return `${BASE}/images/cvc/${family}/${w}.jpeg`;
 }
 export const LETTER_AUDIO = {
-  a: '/audio/letters/a.mp3',
-  b: '/audio/letters/b.mp3',
-  c: '/audio/letters/ck.mp3',
-  d: '/audio/letters/d.mp3',
-  e: '/audio/letters/e.mp3',
-  f: '/audio/letters/f.mp3',
-  g: '/audio/letters/g.mp3',
-  h: '/audio/letters/h.mp3',
-  i: '/audio/letters/i.mp3',
-  j: '/audio/letters/j.mp3',
-  k: '/audio/letters/ck.mp3',
-  l: '/audio/letters/l.mp3',
-  m: '/audio/letters/m.mp3',
-  n: '/audio/letters/n.mp3',
-  o: '/audio/letters/o.mp3',
-  p: '/audio/letters/p.mp3',
-  qu: '/audio/letters/qu.mp3',
-  r: '/audio/letters/r.mp3',
-  s: '/audio/letters/s.mp3',
-  t: '/audio/letters/t.mp3',
-  u: '/audio/letters/u.mp3',
-  v: '/audio/letters/v.mp3',
-  w: '/audio/letters/w.mp3',
-  x: '/audio/letters/x.mp3',
-  y: '/audio/letters/y.mp3',
-  z: '/audio/letters/z.mp3',
+  a: `${BASE}/audio/letters/a.mp3`,
+  b: `${BASE}/audio/letters/b.mp3`,
+  c: `${BASE}/audio/letters/ck.mp3`,
+  d: `${BASE}/audio/letters/d.mp3`,
+  e: `${BASE}/audio/letters/e.mp3`,
+  f: `${BASE}/audio/letters/f.mp3`,
+  g: `${BASE}/audio/letters/g.mp3`,
+  h: `${BASE}/audio/letters/h.mp3`,
+  i: `${BASE}/audio/letters/i.mp3`,
+  j: `${BASE}/audio/letters/j.mp3`,
+  k: `${BASE}/audio/letters/ck.mp3`,
+  l: `${BASE}/audio/letters/l.mp3`,
+  m: `${BASE}/audio/letters/m.mp3`,
+  n: `${BASE}/audio/letters/n.mp3`,
+  o: `${BASE}/audio/letters/o.mp3`,
+  p: `${BASE}/audio/letters/p.mp3`,
+  qu: `${BASE}/audio/letters/qu.mp3`,
+  r: `${BASE}/audio/letters/r.mp3`,
+  s: `${BASE}/audio/letters/s.mp3`,
+  t: `${BASE}/audio/letters/t.mp3`,
+  u: `${BASE}/audio/letters/u.mp3`,
+  v: `${BASE}/audio/letters/v.mp3`,
+  w: `${BASE}/audio/letters/w.mp3`,
+  x: `${BASE}/audio/letters/x.mp3`,
+  y: `${BASE}/audio/letters/y.mp3`,
+  z: `${BASE}/audio/letters/z.mp3`,
 };
 
 /** Vowel example word audio */
 export const VOWEL_WORD_AUDIO = {
-  a: '/audio/vowel-words/a-apple.mp3',
-  e: '/audio/vowel-words/e-elephant.mp3',
-  i: '/audio/vowel-words/i-insect.mp3',
-  o: '/audio/vowel-words/o-octopus.mp3',
-  u: '/audio/vowel-words/u-up.mp3',
+  a: `${BASE}/audio/vowel-words/a-apple.mp3`,
+  e: `${BASE}/audio/vowel-words/e-elephant.mp3`,
+  i: `${BASE}/audio/vowel-words/i-insect.mp3`,
+  o: `${BASE}/audio/vowel-words/o-octopus.mp3`,
+  u: `${BASE}/audio/vowel-words/u-up.mp3`,
 };
 
 /** Vowel Fun narration audio ("I make the sound …") */
 export const VOWEL_FUN_AUDIO = {
-  a: '/audio/vowel-fun/a.mp3',
-  e: '/audio/vowel-fun/e.mp3',
-  i: '/audio/vowel-fun/i.mp3',
-  o: '/audio/vowel-fun/o.mp3',
-  u: '/audio/vowel-fun/u.mp3',
+  a: `${BASE}/audio/vowel-fun/a.mp3`,
+  e: `${BASE}/audio/vowel-fun/e.mp3`,
+  i: `${BASE}/audio/vowel-fun/i.mp3`,
+  o: `${BASE}/audio/vowel-fun/o.mp3`,
+  u: `${BASE}/audio/vowel-fun/u.mp3`,
 };
