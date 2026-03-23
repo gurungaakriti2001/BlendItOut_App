@@ -168,12 +168,32 @@ const VowelUFO = ({ data, isSelected, hasSelection, isBlurred, onClick, index })
 
 const B = import.meta.env.BASE_URL.replace(/\/$/, '');
 const VOWELS = [
-  { vowel: 'A', color: '#ff3b30', word: 'APPLE',    image: `${B}/images/cvc/at/cat.jpeg` },
-  { vowel: 'E', color: '#34c759', word: 'ELEPHANT', image: `${B}/images/cvc/en/hen.jpeg` },
-  { vowel: 'I', color: '#58ccfb', word: 'INSECT',   image: `${B}/images/cvc/ig/pig.jpeg` },
-  { vowel: 'O', color: '#ff9500', word: 'OCTOPUS',  image: `${B}/images/cvc/og/dog.jpeg` },
-  { vowel: 'U', color: '#af52de', word: 'UP',       image: `${B}/images/cvc/ug/bug.jpeg` },
+  { vowel: 'A', color: '#ff3b30', word: 'APPLE',    image: `${B}/images/cvc/at/cat.jpeg`, vowelSound: `${B}/audio/vowel-fun/a.mp3`, wordSound: `${B}/audio/vowel-words/a-apple.mp3` },
+  { vowel: 'E', color: '#34c759', word: 'ELEPHANT', image: `${B}/images/cvc/en/hen.jpeg`, vowelSound: `${B}/audio/vowel-fun/e.mp3`, wordSound: `${B}/audio/vowel-words/e-elephant.mp3` },
+  { vowel: 'I', color: '#58ccfb', word: 'INSECT',   image: `${B}/images/cvc/ig/pig.jpeg`, vowelSound: `${B}/audio/vowel-fun/i.mp3`, wordSound: `${B}/audio/vowel-words/i-insect.mp3` },
+  { vowel: 'O', color: '#ff9500', word: 'OCTOPUS',  image: `${B}/images/cvc/og/dog.jpeg`, vowelSound: `${B}/audio/vowel-fun/o.mp3`, wordSound: `${B}/audio/vowel-words/o-octopus.mp3` },
+  { vowel: 'U', color: '#af52de', word: 'UP',       image: `${B}/images/cvc/ug/bug.jpeg`, vowelSound: `${B}/audio/vowel-fun/u.mp3`, wordSound: `${B}/audio/vowel-words/u-up.mp3` },
 ];
+
+const playSequentialAudio = async (vowelSound, wordSound) => {
+  try {
+    // Play vowel sound
+    const vowelAudio = new Audio(vowelSound);
+    await new Promise((resolve) => {
+      vowelAudio.onended = resolve;
+      vowelAudio.play();
+    });
+
+    // Play word sound after vowel sound ends
+    const wordAudio = new Audio(wordSound);
+    await new Promise((resolve) => {
+      wordAudio.onended = resolve;
+      wordAudio.play();
+    });
+  } catch (error) {
+    console.error('Error playing audio:', error);
+  }
+};
 
 export default function VowelGalaxy({ onBack, playClick = () => {} }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
@@ -241,8 +261,19 @@ export default function VowelGalaxy({ onBack, playClick = () => {} }) {
                 {VOWELS[selectedIdx].word}
               </p>
               <button
+                onClick={() => {
+                  playSequentialAudio(
+                    VOWELS[selectedIdx].vowelSound,
+                    VOWELS[selectedIdx].wordSound
+                  );
+                }}
+                className="mt-8 w-full py-4 bg-blue-500 text-white font-black rounded-[2rem] text-lg hover:bg-blue-600 hover:scale-[1.02] transition-all active:scale-95 shadow-xl px-8"
+              >
+                PLAY VOWEL SOUND
+              </button>
+              <button
                 onClick={() => { playClick(); setSelectedIdx(null); }}
-                className="mt-14 w-full py-6 bg-white text-black font-black rounded-[2rem] text-lg hover:bg-blue-400 hover:scale-[1.02] transition-all active:scale-95 shadow-xl px-8"
+                className="mt-6 w-full py-6 bg-white text-black font-black rounded-[2rem] text-lg hover:bg-blue-400 hover:scale-[1.02] transition-all active:scale-95 shadow-xl px-8"
               >
                 RETURN TO THE VOWEL GALAXY
               </button>
