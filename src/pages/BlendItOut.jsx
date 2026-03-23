@@ -501,7 +501,7 @@ const SegmentBlendGame = ({ onBack }) => {
               <p className="text-yellow-300 text-xs md:text-sm font-bold">Slide rocket to blend the whole word!</p>
 
               <button
-                onClick={() => { playClick(); spinWheel(); }}
+                onClick={() => { playClick(); setShowInteractive(false); setCurrentConsonant(null); setCurrentImage(null); }}
                 className="mt-1 px-6 py-3 rounded-2xl text-white font-bold text-base shadow-lg"
                 style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' }}
               >
