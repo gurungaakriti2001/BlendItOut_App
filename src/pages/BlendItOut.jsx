@@ -207,7 +207,7 @@ const VowelNav = ({ current, onSelect }) => (
 );
 
 const VOWEL_COLORS = { A: '#A855F7', E: '#3B82F6', I: '#EC4899', O: '#F59E0B', U: '#10B981' };
-
+const LAST_DOT_COLOR = '#FFB6C1';
 const SegmentBlendGame = ({ onBack }) => {
   const [selectedVowel, setSelectedVowel] = useState(null);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
@@ -313,6 +313,21 @@ const SegmentBlendGame = ({ onBack }) => {
       setFingerPos({ x: 30, y: 40 }); // reset to first letter in SVG coords
       speak(seg.c);
     }, 3100);
+  };
+
+  const getWheelColor = (index) => {
+    const banned = [];
+    if (selectedVowel) banned.push(VOWEL_COLORS[selectedVowel]);
+    banned.push(LAST_DOT_COLOR);
+    const len = WHEEL_COLORS.length;
+    let color = WHEEL_COLORS[index % len];
+    if (banned.includes(color)) {
+      for (let off = 1; off < len; off++) {
+        const c = WHEEL_COLORS[(index + off) % len];
+        if (!banned.includes(c)) { color = c; break; }
+      }
+    }
+    return color;
   };
 
   const handleFingerPointerDown = (e) => {
@@ -423,28 +438,44 @@ const SegmentBlendGame = ({ onBack }) => {
           {/* Word display tiles */}
           <div className="flex items-end gap-3">
             {[
-              { val: currentConsonant ? currentConsonant.toUpperCase() : null, color: '#F87171' },
-              { val: currentVC ? currentVC[0].toUpperCase() : null, color: '#34D399' },
-              { val: currentVC ? currentVC[1].toUpperCase() : null, color: '#34D399' },
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div
-                  className="w-16 h-20 md:w-20 md:h-24 rounded-2xl flex items-center justify-center text-5xl md:text-6xl font-black text-white shadow-xl border-b-4"
-                  style={{
-                    background: item.val ? 'rgba(255,255,255,0.15)' : 'transparent',
-                    borderColor: item.val ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
-                    minHeight: '80px',
-                  }}
-                >
-                  {item.val || <span className="w-8 h-1 bg-white/30 rounded-full block" />}
+              { val: currentConsonant ? currentConsonant.toUpperCase() : null },
+              { val: currentVC ? currentVC[0].toUpperCase() : null },
+              { val: currentVC ? currentVC[1].toUpperCase() : null },
+            ].map((item, i) => {
+              // determine dot color
+              let dotColor = '#999';
+              if (i === 0) {
+                // first letter: color based on wheel segment for the consonant
+                const segIndex = wheelSegments.findIndex(s => s.c === (currentConsonant || '').toLowerCase());
+                dotColor = segIndex >= 0 ? getWheelColor(segIndex) : '#F87171';
+              } else if (i === 1) {
+                // first vowel tile: color based on chosen vowel
+                dotColor = selectedVowel ? VOWEL_COLORS[selectedVowel] : '#34D399';
+              } else if (i === 2) {
+                // last letter dot is light pink
+                dotColor = LAST_DOT_COLOR;
+              }
+
+              return (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <div
+                    className="w-16 h-20 md:w-20 md:h-24 rounded-2xl flex items-center justify-center text-5xl md:text-6xl font-black text-white shadow-xl border-b-4"
+                    style={{
+                      background: item.val ? 'rgba(255,255,255,0.15)' : 'transparent',
+                      borderColor: item.val ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
+                      minHeight: '80px',
+                    }}
+                  >
+                    {item.val || <span className="w-8 h-1 bg-white/30 rounded-full block" />}
+                  </div>
+                  <button
+                    onClick={() => item.val && speak(item.val.toLowerCase())}
+                    className="w-5 h-5 rounded-full transition-all hover:scale-125"
+                    style={{ background: dotColor, opacity: item.val ? 1 : 0, boxShadow: `0 0 10px ${dotColor}` }}
+                  />
                 </div>
-                <button
-                  onClick={() => item.val && speak(item.val.toLowerCase())}
-                  className="w-5 h-5 rounded-full transition-all hover:scale-125"
-                  style={{ background: item.color, opacity: item.val ? 1 : 0, boxShadow: `0 0 10px ${item.color}` }}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
 
 
@@ -519,7 +550,7 @@ const SegmentBlendGame = ({ onBack }) => {
                   style={{
                     width: '100%', height: '100%', borderRadius: '50%',
                     border: '6px solid white',
-                    background: `conic-gradient(${wheelSegments.map((_, i) => { const pct = 100 / wheelSegments.length; return `${WHEEL_COLORS[i % WHEEL_COLORS.length]} ${i * pct}% ${(i+1) * pct}%`; }).join(',')})`,
+                    background: `conic-gradient(${wheelSegments.map((_, i) => { const pct = 100 / wheelSegments.length; const col = getWheelColor(i); return `${col} ${i * pct}% ${(i+1) * pct}%`; }).join(',')})`,
                     transform: `rotate(${wheelRotation}deg)`,
                     transition: isSpinning ? 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
                     boxShadow: '0 8px 20px rgba(0,0,0,0.3)', position: 'relative',
