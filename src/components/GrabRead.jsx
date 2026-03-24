@@ -81,6 +81,7 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   const [isListening, setIsListening] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [speechFeedback, setSpeechFeedback] = useState(null); // null, 'listening', 'correct', 'incorrect'
+  const [speechTranscript, setSpeechTranscript] = useState('');
   const recognitionRef = useRef(null);
 
   const clawPosRef = useRef(50);
@@ -480,6 +481,7 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
 
     recognition.onresult = (event) => {
       const result = event.results[0][0].transcript.toLowerCase().trim();
+      setSpeechTranscript(result);
       const target = modalRef.current?.word?.toLowerCase();
       if (target && result.includes(target)) {
         setSpeechFeedback('correct');
@@ -493,11 +495,12 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
           setPlanets([...planetsRef.current]);
           closeModal();
           setSpeechFeedback(null);
+          setSpeechTranscript('');
         }, 1200);
       } else {
         setSpeechFeedback('incorrect');
         playPloop();
-        setTimeout(() => setSpeechFeedback(null), 1500);
+        // leave transcript visible until player clicks mic to try again
       }
       setIsListening(false);
     };
@@ -509,7 +512,7 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
     recognition.onerror = () => {
       setSpeechFeedback('incorrect');
       setIsListening(false);
-      setTimeout(() => setSpeechFeedback(null), 1500);
+      // leave error message visible until player clicks mic to try again
     };
 
     recognitionRef.current = recognition;
@@ -532,6 +535,9 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
 
   const handleMicClick = () => {
     if (!modal || isListening || !recognitionRef.current) return;
+    // Clear previous feedback before starting new recognition
+    setSpeechFeedback(null);
+    setSpeechTranscript('');
     try {
       recognitionRef.current.start();
     } catch (e) {
@@ -796,17 +802,21 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
               }`}>
                 {speechFeedback === 'listening' && '🎤 Listening...'}
                 {speechFeedback === 'correct' && '✓ Correct!'}
-                {speechFeedback === 'incorrect' && '✗ Try Again!'}
+                {speechFeedback === 'incorrect' && (
+                  <span>✗ Try Again!<br /><small className="block mt-1">I heard "{speechTranscript}"</small></span>
+                )}
               </div>
             ) : (
-              <p className="text-slate-500 font-medium text-base">Oops! Try tapping the mic.</p>
+              <p className="text-slate-500 font-medium text-base">Say the word to continue!</p>
             )}
             
             {/* Mic Button */}
             <button
               onClick={() => { playClick(); handleMicClick(); }}
               disabled={isListening || speechFeedback === 'correct'}
-              className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center shadow-inner hover:bg-slate-200 disabled:opacity-50 transition-all"
+              className={`w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center shadow-inner hover:bg-slate-200 disabled:opacity-50 transition-all ${
+                speechFeedback === 'listening' ? 'mic-active' : (speechFeedback === 'correct' ? 'mic-success' : '')
+              }`}
             >
               <Mic size={32} className="text-slate-700" />
             </button>
@@ -835,6 +845,21 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       <style>{`
         @keyframes twinkle { from { opacity:0.2; transform:scale(0.9); } to { opacity:0.7; transform:scale(1.05); } }
         @keyframes grScalePop { from { transform:scale(0); } to { transform:scale(1); } }
+        .mic-active {
+          background-color: #3b82f6 !important;
+          color: white !important;
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), inset 0 2px 5px rgba(0,0,0,0.2) !important;
+          animation: mic-pulse 0.6s ease-in-out infinite;
+        }
+        .mic-success {
+          background-color: #10b981 !important;
+          color: white !important;
+          box-shadow: 0 0 15px rgba(16, 185, 129, 0.6), inset 0 2px 5px rgba(0,0,0,0.2) !important;
+        }
+        @keyframes mic-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
       `}</style>
     </div>
   );
