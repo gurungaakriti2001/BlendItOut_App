@@ -62,6 +62,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
   const audioCtxRef = useRef(null);
   const audioPlayerRef = useRef(null);
   const audioQueueRef = useRef([]);
+  const audioFinishedRef = useRef(null);
+  const audioStateRef = useRef({ consonantVowelPlayed: false, endingPlayed: false });
 
   const playPlink = () => {
     if (!audioCtxRef.current) {
@@ -98,7 +100,15 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
 
   const playNextLetter = () => {
     const q = audioQueueRef.current;
-    if (!q || q.length === 0) return;
+    if (!q || q.length === 0) {
+      // Audio queue finished - call the callback if set
+      if (audioFinishedRef.current) {
+        const cb = audioFinishedRef.current;
+        audioFinishedRef.current = null;
+        cb();
+      }
+      return;
+    }
     const ch = q.shift();
     const key = ch.toLowerCase();
     const url = LETTER_AUDIO[key];
@@ -165,6 +175,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
     setBuiltWord(null); setShowConfetti(false);
     setLineLeft(null); setLineRight(null);
     setDragging(null); setLivePoint(null);
+    audioFinishedRef.current = null; // clear any pending callback
+    audioStateRef.current = { consonantVowelPlayed: false, endingPlayed: false }; // reset audio flags
     leftRefs.current = []; rightRefs.current = [];
 
     const fams = VOWEL_FAMILIES[v] || [];
@@ -206,11 +218,16 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
   };
 
   const buildWord = (left, right) => {
+    if (!left || !right) return; // only build if both parts exist
     const word = left.consonant + activeVowel + right.ending;
     setBuiltWord(word);
     setStarsCollected(prev => prev + 1);
     if (onStarEarned) onStarEarned(1);
-    setTimeout(() => { speak(word); setShowConfetti(true); }, 300);
+    // wait for all audio to complete before speaking the word (800ms ensures letter audio finishes)
+    setTimeout(() => { 
+      speak(word);
+      setShowConfetti(true);
+    }, 800);
   };
 
   const onLeftPointerDown = (e, i) => {
@@ -251,15 +268,33 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
         setSelectedLeft(item); setSelectedLeftIdx(dragging.fromIndex);
         playPlink();
         // play consonant then vowel (sequentially, no overlap)
+        audioStateRef.current.consonantVowelPlayed = false;
         playLetterAudio(item.consonant + activeVowel);
-        if (selectedRight) buildWord(item, selectedRight);
+        // set callback to mark consonant-vowel as played
+        audioFinishedRef.current = () => {
+          audioStateRef.current.consonantVowelPlayed = true;
+          // check if both consonant-vowel and ending are played
+          if (audioStateRef.current.consonantVowelPlayed && audioStateRef.current.endingPlayed) {
+            buildWord(item, selectedRight);
+          }
+          audioFinishedRef.current = null;
+        };
       } else if (dragging.fromType === 'vowel' && role === 'right') {
         const item = rightItems[idx];
         setSelectedRight(item); setSelectedRightIdx(idx);
         playPlink();
-        // play vowel then ending (sequentially)
-        playLetterAudio(activeVowel + item.ending);
-        if (selectedLeft) buildWord(selectedLeft, item);
+        // play ONLY the ending (vowel was already played with consonant)
+        audioStateRef.current.endingPlayed = false;
+        playLetterAudio(item.ending);
+        // set callback to mark ending as played
+        audioFinishedRef.current = () => {
+          audioStateRef.current.endingPlayed = true;
+          // check if both consonant-vowel and ending are played
+          if (audioStateRef.current.consonantVowelPlayed && audioStateRef.current.endingPlayed) {
+            buildWord(selectedLeft, item);
+          }
+          audioFinishedRef.current = null;
+        };
       }
     }
     setDragging(null); setLivePoint(null);
@@ -270,6 +305,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
     setSelectedLeftIdx(null); setSelectedRightIdx(null);
     setBuiltWord(null); setShowConfetti(false);
     setLineLeft(null); setLineRight(null);
+    audioFinishedRef.current = null; // clear any pending callback
+    audioStateRef.current = { consonantVowelPlayed: false, endingPlayed: false }; // reset audio flags
     if (activeVowel) loadVowel(activeVowel);
   };
 
