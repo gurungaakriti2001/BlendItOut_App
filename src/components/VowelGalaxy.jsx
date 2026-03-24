@@ -168,11 +168,11 @@ const VowelUFO = ({ data, isSelected, hasSelection, isBlurred, onClick, index })
 
 const B = import.meta.env.BASE_URL.replace(/\/$/, '');
 const VOWELS = [
-  { vowel: 'A', color: '#ff3b30', word: 'APPLE',    image: `${B}/images/cvc/at/cat.jpeg`, vowelSound: `${B}/audio/vowel-fun/a.mp3`, wordSound: `${B}/audio/vowel-words/a-apple.mp3` },
-  { vowel: 'E', color: '#34c759', word: 'ELEPHANT', image: `${B}/images/cvc/en/hen.jpeg`, vowelSound: `${B}/audio/vowel-fun/e.mp3`, wordSound: `${B}/audio/vowel-words/e-elephant.mp3` },
-  { vowel: 'I', color: '#58ccfb', word: 'INSECT',   image: `${B}/images/cvc/ig/pig.jpeg`, vowelSound: `${B}/audio/vowel-fun/i.mp3`, wordSound: `${B}/audio/vowel-words/i-insect.mp3` },
-  { vowel: 'O', color: '#ff9500', word: 'OCTOPUS',  image: `${B}/images/cvc/og/dog.jpeg`, vowelSound: `${B}/audio/vowel-fun/o.mp3`, wordSound: `${B}/audio/vowel-words/o-octopus.mp3` },
-  { vowel: 'U', color: '#af52de', word: 'UP',       image: `${B}/images/cvc/ug/bug.jpeg`, vowelSound: `${B}/audio/vowel-fun/u.mp3`, wordSound: `${B}/audio/vowel-words/u-up.mp3` },
+  { vowel: 'A', color: '#ff3b30', word: 'APPLE',    image: `${B}/images/cvc/vowelfunimages/apple.jpeg`, vowelSound: `${B}/audio/vowel-fun/a.mp3`, wordSound: `${B}/audio/vowel-words/a-apple.mp3` },
+  { vowel: 'E', color: '#34c759', word: 'ELEPHANT', image: `${B}/images/cvc/vowelfunimages/elephant.jpeg`, vowelSound: `${B}/audio/vowel-fun/e.mp3`, wordSound: `${B}/audio/vowel-words/e-elephant.mp3` },
+  { vowel: 'I', color: '#58ccfb', word: 'INSECT',   image: `${B}/images/cvc/vowelfunimages/insect.jpeg`, vowelSound: `${B}/audio/vowel-fun/i.mp3`, wordSound: `${B}/audio/vowel-words/i-insect.mp3` },
+  { vowel: 'O', color: '#ff9500', word: 'OCTOPUS',  image: `${B}/images/cvc/vowelfunimages/octopus.jpeg`, vowelSound: `${B}/audio/vowel-fun/o.mp3`, wordSound: `${B}/audio/vowel-words/o-octopus.mp3` },
+  { vowel: 'U', color: '#af52de', word: 'UP',       image: `${B}/images/cvc/vowelfunimages/up.jpeg`, vowelSound: `${B}/audio/vowel-fun/u.mp3`, wordSound: `${B}/audio/vowel-words/u-up.mp3` },
 ];
 
 const playSequentialAudio = async (vowelSound, wordSound) => {
