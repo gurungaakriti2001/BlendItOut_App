@@ -89,6 +89,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   const stickXRef = useRef(0);
   const isGrabbingRef = useRef(false);
   const planetsRef = useRef(planets);
+  const modalRef = useRef(modal);
+  const planetSyncCounterRef = useRef(0);
   const cableHeightRef = useRef(0);
   const grabbedIdRef = useRef(null);
   const rafRef = useRef(null);
@@ -212,6 +214,7 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   // Physics loop
   useEffect(() => {
     const loop = () => {
+      // update claw physics
       if (!isGrabbingRef.current) {
         const targetVel = stickXRef.current * 3.5;
         clawVelRef.current += (targetVel - clawVelRef.current) * 0.2;
@@ -225,7 +228,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
         setClawTilt(clawTiltRef.current);
       }
 
-      setPlanets(prev => prev.map(p => {
+      // update planet physics in ref to avoid constant re-renders
+      const next = planetsRef.current.map(p => {
         if (p.isGrabbed) return p;
         let { x, y, vx, vy } = p;
         vy -= 0.1;
@@ -234,7 +238,12 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
         if (y < 15) { y = 15; vy *= -0.15; vx *= 0.9; }
         if (x < 30 || x > 82) { vx *= -0.6; x = Math.max(30, Math.min(82, x)); }
         return { ...p, x, y, vx, vy };
-      }));
+      });
+      planetsRef.current = next;
+
+      // sync to state at ~15 FPS to reduce React work
+      planetSyncCounterRef.current = (planetSyncCounterRef.current + 1) % 4;
+      if (planetSyncCounterRef.current === 0) setPlanets([...planetsRef.current]);
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -301,9 +310,11 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
           const offsetX = Math.sin(rad) * totalH;
           const targetX = (clawPosRef.current - 8.2) + (offsetX / 3.4);
           const targetY = (300 - cableHeightRef.current - 110);
-          setPlanets(prev => prev.map(p =>
+          planetsRef.current = planetsRef.current.map(p =>
             p.id === grabbedIdRef.current ? { ...p, x: p.x + (targetX - p.x) * 0.5, y: p.y + (targetY - p.y) * 0.5 } : p
-          ));
+          );
+          // sync to state occasionally for smooth UI
+          setPlanets([...planetsRef.current]);
         }
         requestAnimationFrame(step);
       }
@@ -350,7 +361,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       // Lock planet to claw immediately as fingers close
       grabbedIdRef.current = caught.id;
       setGrabbedId(caught.id);
-      setPlanets(prev => prev.map(p => p.id === caught.id ? { ...p, isGrabbed: true } : p));
+      planetsRef.current = planetsRef.current.map(p => p.id === caught.id ? { ...p, isGrabbed: true } : p);
+      setPlanets([...planetsRef.current]);
     }
 
     // Pause so player can see the claw close
@@ -368,29 +380,31 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
         const step = () => {
           clawTiltRef.current = -speed * 2.5;
           setClawTilt(clawTiltRef.current);
-          if (clawPosRef.current <= 18) {
+            if (clawPosRef.current <= 18) {
             clawPosRef.current = 18;
             setClawPos(18);
-            setPlanets(prev => prev.map(p => {
+            planetsRef.current = planetsRef.current.map(p => {
               if (p.id !== grabbedIdRef.current) return p;
               const tilt = clawTiltRef.current;
               const rad = (tilt * Math.PI) / 180;
               const totalH = cableHeightRef.current + 65;
               const offsetX = Math.sin(rad) * totalH;
               return { ...p, x: (clawPosRef.current - 8.2) + (offsetX / 3.4), y: 300 - cableHeightRef.current - 110 };
-            }));
+            });
+            setPlanets([...planetsRef.current]);
             setTimeout(resolve, 300);
           } else {
             clawPosRef.current -= speed;
             setClawPos(clawPosRef.current);
-            setPlanets(prev => prev.map(p => {
+            planetsRef.current = planetsRef.current.map(p => {
               if (p.id !== grabbedIdRef.current) return p;
               const tilt = clawTiltRef.current;
               const rad = (tilt * Math.PI) / 180;
               const totalH = cableHeightRef.current + 65;
               const offsetX = Math.sin(rad) * totalH;
               return { ...p, x: (clawPosRef.current - 8.2) + (offsetX / 3.4), y: 300 - cableHeightRef.current - 110 };
-            }));
+            });
+            setPlanets([...planetsRef.current]);
             requestAnimationFrame(step);
           }
         };
@@ -402,7 +416,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
 
       // Drop planet animation
       const droppedPlanet = planetsRef.current.find(p => p.id === caught.id);
-      setPlanets(prev => prev.filter(p => p.id !== caught.id));
+      planetsRef.current = planetsRef.current.filter(p => p.id !== caught.id);
+      setPlanets([...planetsRef.current]);
       grabbedIdRef.current = null;
       setGrabbedId(null);
 
@@ -428,8 +443,9 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
         }, 20);
       });
 
-      // Respawn a new planet
-      setPlanets(prev => [...prev, randomPlanet()]);
+      // Respawn a new planet (update ref + state)
+      planetsRef.current = [...planetsRef.current, randomPlanet()];
+      setPlanets([...planetsRef.current]);
     } else {
       playCling();
       setIsGrabClosed(false);
@@ -440,15 +456,18 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   };
 
   const closeModal = () => {
+    try { if (recognitionRef.current && typeof recognitionRef.current.stop === 'function') recognitionRef.current.stop(); } catch (e) {}
+    setIsListening(false);
     setModal(null);
   };
 
+  // Initialize SpeechRecognition once and use modalRef to check current target
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
-    
+
     if (recognitionRef.current) return;
-    
+
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -461,17 +480,20 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
 
     recognition.onresult = (event) => {
       const result = event.results[0][0].transcript.toLowerCase().trim();
-      if (modal && result.includes(modal.word.toLowerCase())) {
+      const target = modalRef.current?.word?.toLowerCase();
+      if (target && result.includes(target)) {
         setSpeechFeedback('correct');
         setStarsCollected(prev => prev + 1);
         if (onStarEarned) onStarEarned(1);
         playFireworkSound();
         launchFireworks();
         setTimeout(() => {
-          setPlanets(prev => [...prev, randomPlanet()]);
+          // add a new planet and close modal
+          planetsRef.current = [...planetsRef.current, randomPlanet()];
+          setPlanets([...planetsRef.current]);
           closeModal();
           setSpeechFeedback(null);
-        }, 1500);
+        }, 1200);
       } else {
         setSpeechFeedback('incorrect');
         playPloop();
@@ -491,7 +513,22 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
     };
 
     recognitionRef.current = recognition;
-  }, [modal]);
+    return () => {
+      try { recognition.stop(); } catch (e) {}
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  // Sync modal ref and auto-start listening when modal opens
+  useEffect(() => {
+    modalRef.current = modal;
+    if (modal && recognitionRef.current && !isListening) {
+      // small delay to allow UI to settle
+      setTimeout(() => {
+        try { recognitionRef.current.start(); } catch (e) {}
+      }, 60);
+    }
+  }, [modal, isListening]);
 
   const handleMicClick = () => {
     if (!modal || isListening || !recognitionRef.current) return;
@@ -503,7 +540,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   };
 
   const handleSkip = () => {
-    setPlanets(prev => [...prev, randomPlanet()]);
+    planetsRef.current = [...planetsRef.current, randomPlanet()];
+    setPlanets([...planetsRef.current]);
     closeModal();
   };
 
