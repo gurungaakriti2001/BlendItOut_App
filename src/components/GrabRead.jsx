@@ -522,16 +522,16 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
     };
   }, []);
 
-  // Sync modal ref and auto-start listening when modal opens
+  // Sync modal ref and auto-start listening when modal opens (but not if there's incorrect feedback waiting for retry)
   useEffect(() => {
     modalRef.current = modal;
-    if (modal && recognitionRef.current && !isListening) {
+    if (modal && recognitionRef.current && !isListening && speechFeedback !== 'incorrect') {
       // small delay to allow UI to settle
       setTimeout(() => {
         try { recognitionRef.current.start(); } catch (e) {}
       }, 60);
     }
-  }, [modal, isListening]);
+  }, [modal, isListening, speechFeedback]);
 
   const handleMicClick = () => {
     if (!modal || isListening || !recognitionRef.current) return;
@@ -821,23 +821,14 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
               <Mic size={32} className="text-slate-700" />
             </button>
             
-            {/* Skip and Next Buttons */}
-            <div className="flex gap-4 w-full">
-              <button
-                onClick={() => { playClick(); handleSkip(); }}
-                disabled={speechFeedback === 'correct'}
-                className="flex-1 bg-slate-300 text-slate-700 py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-slate-400 disabled:opacity-50 active:scale-95 transition-all"
-              >
-                SKIP
-              </button>
-              <button
-                onClick={() => { playClick(); handleSkip(); }}
-                disabled={speechFeedback !== 'correct'}
-                className="flex-1 bg-blue-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-blue-600 disabled:opacity-50 active:scale-95 transition-all"
-              >
-                NEXT!
-              </button>
-            </div>
+            {/* Skip Button */}
+            <button
+              onClick={() => { playClick(); handleSkip(); }}
+              disabled={speechFeedback === 'correct'}
+              className="w-full bg-slate-300 text-slate-700 py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-slate-400 disabled:opacity-50 active:scale-95 transition-all"
+            >
+              SKIP
+            </button>
           </div>
         </div>
       )}
