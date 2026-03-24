@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WORD_FAMILIES, getFamilyConsonants, getWordImage } from '../utils/cvcAssets';
+import { WORD_FAMILIES, getFamilyConsonants, getWordImage, CVC_WORDS, LETTER_AUDIO } from '../utils/cvcAssets';
 
 const VOWEL_FAMILIES = Object.fromEntries(
   Object.entries(WORD_FAMILIES).map(([k, v]) => [k.toLowerCase(), v])
@@ -60,6 +60,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
 
   const containerRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const audioPlayerRef = useRef(null);
+  const audioQueueRef = useRef([]);
 
   const playPlink = () => {
     if (!audioCtxRef.current) {
@@ -78,6 +80,52 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.25);
+  };
+
+  const stopAudio = () => {
+    try {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        try { audioPlayerRef.current.currentTime = 0; } catch (e) {}
+        audioPlayerRef.current = null;
+      }
+      audioQueueRef.current = [];
+      if (window && window.speechSynthesis) window.speechSynthesis.cancel();
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const playNextLetter = () => {
+    const q = audioQueueRef.current;
+    if (!q || q.length === 0) return;
+    const ch = q.shift();
+    const key = ch.toLowerCase();
+    const url = LETTER_AUDIO[key];
+    if (url) {
+      const a = new Audio(url);
+      audioPlayerRef.current = a;
+      a.onended = () => { audioPlayerRef.current = null; playNextLetter(); };
+      a.play().catch(() => { audioPlayerRef.current = null; playNextLetter(); });
+    } else {
+      // fallback to TTS for single characters
+      const utt = new SpeechSynthesisUtterance(ch);
+      utt.onend = () => { playNextLetter(); };
+      if (window && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utt);
+      } else {
+        playNextLetter();
+      }
+    }
+  };
+
+  const playLetterAudio = (str) => {
+    if (!str) return;
+    stopAudio();
+    const parts = Array.from(String(str));
+    audioQueueRef.current = parts;
+    playNextLetter();
   };
   const leftRefs     = useRef([]);
   const rightRefs    = useRef([]);
@@ -121,8 +169,16 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
 
     const fams = VOWEL_FAMILIES[v] || [];
     let words = [];
+    const wordSet = new Set(CVC_WORDS.map(w => w.toLowerCase()));
     fams.forEach(f => {
-      getFamilyConsonants(f).forEach(c => words.push({ consonant: c, ending: f.substring(1), emoji: getWordImage(c + f) }));
+      getFamilyConsonants(f).forEach(c => {
+        const ending = f.substring(1);
+        const candidate = (c + v + ending).toLowerCase();
+        // Only include words that exist in the canonical CVC word bank
+        if (wordSet.has(candidate)) {
+          words.push({ consonant: c, ending, emoji: getWordImage(c + f) });
+        }
+      });
     });
     words.sort(() => 0.5 - Math.random());
     const seenC = new Set(); const seenE = new Set();
@@ -134,6 +190,19 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
     }
     setLeftItems(left.slice(0, 3));
     setRightItems(right.slice(0, 3));
+    // Dev-time validation: ensure shown words are from the canonical word bank
+    if (process.env.NODE_ENV !== 'production') {
+      const mismatches = [];
+      left.slice(0,3).forEach(li => {
+        const w = (li.consonant + v + li.ending).toLowerCase();
+        if (!wordSet.has(w)) mismatches.push(w);
+      });
+      right.slice(0,3).forEach(ri => {
+        const w = (ri.consonant + v + ri.ending).toLowerCase();
+        if (!wordSet.has(w)) mismatches.push(w);
+      });
+      if (mismatches.length) console.warn('CVCConnect: shown words missing from CVC word bank:', mismatches);
+    }
   };
 
   const buildWord = (left, right) => {
@@ -150,6 +219,10 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
     setDragging({ fromType: 'left', fromIndex: i, sx: center.x, sy: center.y });
     const cr = containerRef.current.getBoundingClientRect();
     setLivePoint({ x: e.clientX - cr.left, y: e.clientY - cr.top });
+  };
+
+  const onRightPointerDown = (e, i) => {
+    // reserved for pointer interactions; click audio handled via onClick
   };
 
   const onVowelPointerDown = (e) => {
@@ -177,13 +250,15 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
         const item = leftItems[dragging.fromIndex];
         setSelectedLeft(item); setSelectedLeftIdx(dragging.fromIndex);
         playPlink();
-        speak(item.consonant);
+        // play consonant then vowel (sequentially, no overlap)
+        playLetterAudio(item.consonant + activeVowel);
         if (selectedRight) buildWord(item, selectedRight);
       } else if (dragging.fromType === 'vowel' && role === 'right') {
         const item = rightItems[idx];
         setSelectedRight(item); setSelectedRightIdx(idx);
         playPlink();
-        speak(item.ending);
+        // play vowel then ending (sequentially)
+        playLetterAudio(activeVowel + item.ending);
         if (selectedLeft) buildWord(selectedLeft, item);
       }
     }
@@ -247,6 +322,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
         </div>
       </div>
 
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+
       {/* Vowel row */}
       <div className="flex justify-center gap-2 sm:gap-4 px-3 py-3 bg-white/5">
         {['a','e','i','o','u'].map(v => (
@@ -298,6 +375,7 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
                 data-droptarget="left"
                 data-idx={i}
                 onPointerDown={(e) => onLeftPointerDown(e, i)}
+                onClick={() => playLetterAudio(item.consonant)}
                 style={{
                   gridColumn: 1, gridRow: i + 1,
                   width: TILE_SIZE, height: TILE_SIZE,
@@ -320,7 +398,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
             <div
               ref={vowelRef}
               data-droptarget="vowel"
-              onPointerDown={onVowelPointerDown}
+              onPointerDown={(e) => onVowelPointerDown(e)}
+              onClick={() => activeVowel && playLetterAudio(activeVowel)}
               style={{
                 gridColumn: 2, gridRow: 2,
                 width: TILE_SIZE, height: TILE_SIZE,
@@ -343,6 +422,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
                 ref={el => rightRefs.current[i] = el}
                 data-droptarget="right"
                 data-idx={i}
+                onPointerDown={(e) => onRightPointerDown(e, i)}
+                onClick={() => playLetterAudio(item.ending)}
                 style={{
                   gridColumn: 3, gridRow: i + 1,
                   width: TILE_SIZE, height: TILE_SIZE,
