@@ -328,7 +328,10 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
       {isPaused && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-[100] backdrop-blur-sm">
           <h1 className="text-5xl mb-8 font-black text-yellow-400 uppercase italic">Paused</h1>
-          <button onClick={() => { playClick(); setIsPaused(false); }} className="bg-[#5C6EE6] px-10 py-4 rounded-2xl border-b-4 border-[#4b5cd1] text-white text-xl font-black hover:bg-[#4b5cd1] transition-colors">▶ Resume</button>
+          <div className="flex flex-col gap-4">
+            <button onClick={() => { playClick(); setIsPaused(false); }} className="bg-[#5C6EE6] px-10 py-4 rounded-2xl border-b-4 border-[#4b5cd1] text-white text-xl font-black hover:bg-[#4b5cd1] transition-colors">▶ Resume</button>
+            <button onClick={() => { playClick(); onBack(); }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
+          </div>
         </div>
       )}
 

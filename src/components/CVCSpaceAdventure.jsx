@@ -241,10 +241,13 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
             <span className="text-white text-xl font-black">←</span>
           </button>
           <h1 className="text-5xl mb-8 font-bold text-yellow-400">MISSION PAUSED</h1>
-          <button
-            onClick={() => { playClick(); setGameState('playing'); }}
-            className="bg-blue-600 px-10 py-6 rounded-2xl border-b-8 border-blue-800 hover:bg-blue-500 text-2xl font-bold text-white"
-          >RESUME</button>
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => { playClick(); setGameState('playing'); }}
+              className="bg-blue-600 px-10 py-6 rounded-2xl border-b-8 border-blue-800 hover:bg-blue-500 text-2xl font-bold text-white"
+            >RESUME</button>
+            <button onClick={() => { playClick(); onBack(); }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
+          </div>
         </div>
       )}
 
