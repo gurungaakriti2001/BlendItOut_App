@@ -785,7 +785,7 @@ export default function BlendItOut() {
                   <img
                     src="https://media.base44.com/images/public/69b3b4aa12b9c667ee192e41/c356a7985_vowelfun.png"
                     alt="Vowel Fun"
-                    className="w-full max-w-[320px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(124,58,237,0.6)] transition-all"
+                    className="w-full max-w-[520px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(124,58,237,0.6)] transition-all"
                   />
                 </motion.button>
                 <motion.button
@@ -797,7 +797,7 @@ export default function BlendItOut() {
                   <img
                     src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69b3b4aa12b9c667ee192e41/03c6b9264_segmentblend.png"
                     alt="Segment & Blend"
-                    className="w-full max-w-[320px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(37,99,235,0.6)] transition-all"
+                    className="w-full max-w-[520px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(37,99,235,0.6)] transition-all"
                   />
                 </motion.button>
                 <motion.button
@@ -809,7 +809,7 @@ export default function BlendItOut() {
                   <img
                     src="https://media.base44.com/images/public/69b3b4aa12b9c667ee192e41/5aa43806b_cvcchallenge.png"
                     alt="CVC Challenge"
-                    className="w-full max-w-[320px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(219,39,119,0.6)] transition-all"
+                    className="w-full max-w-[520px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(219,39,119,0.6)] transition-all"
                   />
                 </motion.button>
               </div>
@@ -863,7 +863,7 @@ export default function BlendItOut() {
                       <img
                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69b3b4aa12b9c667ee192e41/618db5e96_cvcconnect.png"
                        alt="CVC Connect"
-                       className="w-full max-w-[280px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(59,130,246,0.6)] transition-all"
+                       className="w-full max-w-[540px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(59,130,246,0.6)] transition-all"
                       />
                     </motion.button>
                   ) : mode.id === 'match' ? (
@@ -877,7 +877,7 @@ export default function BlendItOut() {
                       <img
                        src="https://media.base44.com/images/public/69b3b4aa12b9c667ee192e41/31e3b7319_whackthealien.png"
                        alt="Whack the Alien"
-                       className="w-full max-w-[280px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(236,72,153,0.6)] transition-all"
+                       className="w-full max-w-[540px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(236,72,153,0.6)] transition-all"
                       />
                     </motion.button>
                   ) : mode.id === 'rapid' ? (
@@ -891,7 +891,7 @@ export default function BlendItOut() {
                       <img
                         src="https://media.base44.com/images/public/69b3b4aa12b9c667ee192e41/6e7681e3a_cvcspaceadventure.png"
                         alt="CVC Space Adventure"
-                        className="w-full max-w-[280px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(245,158,11,0.6)] transition-all"
+                        className="w-full max-w-[540px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(245,158,11,0.6)] transition-all"
                       />
                     </motion.button>
                   ) : mode.id === 'grab' ? (
@@ -905,7 +905,7 @@ export default function BlendItOut() {
                       <img
                         src="https://media.base44.com/images/public/69b3b4aa12b9c667ee192e41/e22b00604_grabread.png"
                         alt="Grab & Read"
-                        className="w-full max-w-[280px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(139,92,246,0.6)] transition-all"
+                        className="w-full max-w-[540px] aspect-square object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_20px_40px_rgba(139,92,246,0.6)] transition-all"
                       />
                     </motion.button>
                   ) : null)}
