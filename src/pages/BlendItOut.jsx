@@ -760,7 +760,6 @@ export default function BlendItOut() {
           <motion.div key="learning-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-20 w-full h-full p-6 relative flex flex-col items-center">
             <div className="w-full flex justify-between max-w-6xl z-[60] pt-2">
               <button onClick={() => { playClick(); setView('home'); }} className="text-white/70 hover:text-white uppercase text-xs font-bold tracking-widest">← Back</button>
-              <button onClick={() => { playClick(); setShowSettings(true); }} className="w-12 h-12 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors"><img src={SETTINGS_ICON_URL} className="w-6 h-6 invert" alt="Settings" /></button>
             </div>
             <div className="flex-1 flex flex-col items-center justify-center w-full max-w-7xl">
               <div className="flex justify-center mb-8 py-4 overflow-visible whitespace-nowrap">
@@ -836,9 +835,6 @@ export default function BlendItOut() {
                     <span className="text-yellow-400 text-lg">⭐</span>
                     <span className="text-white font-bold text-lg">{totalStars}</span>
                   </div>
-                  <button onClick={() => { playClick(); setShowSettings(true); }} className="w-10 h-10 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
-                    <img src="https://img.icons8.com/ios-filled/50/ffffff/settings.png" className="w-5 h-5" alt="Settings" />
-                  </button>
                 </div>
              </div>
 
@@ -908,25 +904,25 @@ export default function BlendItOut() {
 
         {view === 'cvc-connect' && (
           <motion.div key="cvc-connect-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-20 w-full h-full">
-            <CVCConnect onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => setShowSettings(true)} onStarEarned={addStars} totalStars={totalStars} />
+            <CVCConnect onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => {}} onStarEarned={addStars} totalStars={totalStars} />
           </motion.div>
         )}
 
         {view === 'whack-alien' && (
           <motion.div key="whack-alien-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-20 w-full h-full">
-            <WhackAlien onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => setShowSettings(true)} onStarEarned={addStars} totalStars={totalStars} />
+            <WhackAlien onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => {}} onStarEarned={addStars} totalStars={totalStars} />
           </motion.div>
         )}
 
         {view === 'grab-read' && (
           <motion.div key="grab-read-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-20 w-full h-full">
-            <GrabRead onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => setShowSettings(true)} onStarEarned={addStars} totalStars={totalStars} />
+            <GrabRead onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => {}} onStarEarned={addStars} totalStars={totalStars} />
           </motion.div>
         )}
 
         {view === 'cvc-space-adventure' && (
           <motion.div key="cvc-space-adventure-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-20 w-full h-full">
-            <CVCSpaceAdventure onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => setShowSettings(true)} onStarEarned={addStars} totalStars={totalStars} />
+            <CVCSpaceAdventure onBack={() => setView('cvc-challenge')} speak={speak} playClick={playClick} onSettings={() => {}} onStarEarned={addStars} totalStars={totalStars} />
           </motion.div>
         )}
 
@@ -940,32 +936,6 @@ export default function BlendItOut() {
           <motion.div key="vowel-fun-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="z-20 w-full h-full">
             <VowelGalaxy onBack={() => setView('learning')} playClick={playClick} />
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {showSettings && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSettings(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-[400px] bg-white rounded-[40px] p-8 shadow-2xl flex flex-col gap-8">
-              <div className="flex justify-between items-center">
-                <h3 className="text-[#6A06B4] text-3xl font-black uppercase italic tracking-tighter">Settings</h3>
-                <button onClick={() => { playClick(); setShowSettings(false); }} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600">✕</button>
-              </div>
-              <div className="flex flex-col gap-6">
-                <SettingSlider label="Music" value={settings.musicVolume} icon="🎵" onChange={(v) => setSettings({...settings, musicVolume: v})} />
-                <SettingSlider label="SFX" value={settings.sfxVolume} icon="🔊" onChange={(v) => setSettings({...settings, sfxVolume: v})} />
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
-                  <span className="text-[#6A06B4] font-black uppercase text-sm">Game Timer</span>
-                  <button onClick={() => setSettings({...settings, timerEnabled: !settings.timerEnabled})} className={`w-14 h-8 rounded-full transition-colors relative ${settings.timerEnabled ? 'bg-[#D164C0]' : 'bg-slate-300'}`}>
-                    <motion.div animate={{ x: settings.timerEnabled ? 24 : 4 }} className="absolute top-1 w-6 h-6 bg-white rounded-full shadow-sm" />
-                  </button>
-                </div>
-              </div>
-              <button onClick={() => { playClick(); setShowSettings(false); }} className="w-full py-5 bg-[#5C6EE6] rounded-2xl text-white font-black uppercase tracking-widest shadow-xl hover:brightness-110">Save Settings</button>
-            </motion.div>
-          </div>
         )}
       </AnimatePresence>
     </div>

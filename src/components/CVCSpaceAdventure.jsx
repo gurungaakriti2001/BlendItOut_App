@@ -275,11 +275,6 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
           >
             <span className="text-white font-black text-sm">⏸</span>
           </button>
-          {onSettings && (
-            <button onClick={() => { playClick(); onSettings(); }} className="w-9 h-9 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
-              <img src="https://img.icons8.com/ios-filled/50/ffffff/settings.png" className="w-5 h-5" alt="Settings" />
-            </button>
-          )}
         </div>
 
         {/* Middle: Speaker */}

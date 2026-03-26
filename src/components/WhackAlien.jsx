@@ -283,11 +283,6 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
             <span className="text-yellow-400 text-lg">⭐</span>
             <span className="text-white font-bold text-lg">{totalStars}</span>
           </div>
-          {onSettings && (
-            <button onClick={() => { playClick(); onSettings(); }} className="w-10 h-10 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
-              <img src="https://img.icons8.com/ios-filled/50/ffffff/settings.png" className="w-5 h-5" alt="Settings" />
-            </button>
-          )}
         </div>
       </div>
 
