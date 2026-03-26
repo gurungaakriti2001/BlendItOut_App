@@ -175,10 +175,17 @@ const VOWELS = [
   { vowel: 'U', color: '#af52de', word: 'UP',       image: `${B}/images/cvc/vowelfunimages/up.jpeg`, vowelSound: `${B}/audio/vowel-fun/u.mp3`, wordSound: `${B}/audio/vowel-words/u-up.mp3` },
 ];
 
-const playSequentialAudio = async (vowelSound, wordSound) => {
+const playSequentialAudio = async (vowelSound, wordSound, audioRef) => {
   try {
+    // Stop any currently playing audio and restart from beginning
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
     // Play vowel sound
     const vowelAudio = new Audio(vowelSound);
+    audioRef.current = vowelAudio;
     await new Promise((resolve) => {
       vowelAudio.onended = resolve;
       vowelAudio.play();
@@ -186,6 +193,7 @@ const playSequentialAudio = async (vowelSound, wordSound) => {
 
     // Play word sound after vowel sound ends
     const wordAudio = new Audio(wordSound);
+    audioRef.current = wordAudio;
     await new Promise((resolve) => {
       wordAudio.onended = resolve;
       wordAudio.play();
@@ -197,12 +205,24 @@ const playSequentialAudio = async (vowelSound, wordSound) => {
 
 export default function VowelGalaxy({ onBack, playClick = () => {} }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
+  const audioRef = useRef(null);
+
+  const handleReturn = () => {
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    playClick();
+    setSelectedIdx(null);
+  };
 
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 z-50 flex-shrink-0">
-        <button onClick={() => { playClick(); onBack(); }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+        <button onClick={() => { playClick(); if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; } onBack(); }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
           <span className="text-white text-xl font-black">←</span>
         </button>
         <motion.h1
@@ -264,7 +284,8 @@ export default function VowelGalaxy({ onBack, playClick = () => {} }) {
                 onClick={() => {
                   playSequentialAudio(
                     VOWELS[selectedIdx].vowelSound,
-                    VOWELS[selectedIdx].wordSound
+                    VOWELS[selectedIdx].wordSound,
+                    audioRef
                   );
                 }}
                 className="mt-8 w-full py-4 bg-blue-500 text-white font-black rounded-[2rem] text-lg hover:bg-blue-600 hover:scale-[1.02] transition-all active:scale-95 shadow-xl px-8"
@@ -272,7 +293,7 @@ export default function VowelGalaxy({ onBack, playClick = () => {} }) {
                 PLAY VOWEL SOUND
               </button>
               <button
-                onClick={() => { playClick(); setSelectedIdx(null); }}
+                onClick={handleReturn}
                 className="mt-6 w-full py-6 bg-white text-black font-black rounded-[2rem] text-lg hover:bg-blue-400 hover:scale-[1.02] transition-all active:scale-95 shadow-xl px-8"
               >
                 RETURN TO THE VOWEL GALAXY
