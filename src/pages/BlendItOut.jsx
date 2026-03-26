@@ -827,8 +827,20 @@ export default function BlendItOut() {
           >
              <div className="w-full flex justify-between max-w-6xl items-center mb-10 sticky top-0 bg-[#050510]/80 backdrop-blur-md z-[100] py-4 rounded-3xl px-4 border border-white/5">
                 <button onClick={() => { playClick(); setView('learning'); }} className="w-10 h-10 bg-white/10 hover:bg-white/20 transition-colors rounded-xl flex items-center justify-center border border-white/10"><span className="text-white text-xl font-black">←</span></button>
-                <div className="text-center">
-                  <h2 className="text-white text-2xl md:text-5xl font-black uppercase italic tracking-tighter drop-shadow-2xl">CVC CHALLENGE</h2>
+                <div className="text-center flex justify-center">
+                  <div className="flex justify-center whitespace-nowrap">
+                    {"CVC CHALLENGE".split('').map((char, index) => (
+                      <motion.span
+                        key={index}
+                        initial={{ y: 0, opacity: 0 }}
+                        animate={{ y: [0, -10, 0], opacity: 1 }}
+                        transition={{ opacity: { duration: 0.8 }, y: { duration: 2, repeat: Infinity, ease: "easeInOut", delay: index * 0.08 } }}
+                        className={`inline-block text-white text-2xl md:text-5xl font-black uppercase italic drop-shadow-lg ${char === ' ' ? 'w-2 md:w-4' : ''}`}
+                      >
+                        {char === ' ' ? '\u00A0' : char}
+                      </motion.span>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 bg-indigo-950/60 px-3 py-1.5 rounded-full border border-orange-400/50">
