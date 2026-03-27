@@ -66,7 +66,8 @@ const PlanetShape = ({ styleType, color, size = 55 }) => {
 
 export default function GrabRead({ onBack, speak, playClick = () => {}, onSettings, onStarEarned, totalStars = 0 }) {
   const [isPaused, setIsPaused] = useState(false);
-  const [planets, setPlanets] = useState(() => Array.from({ length: 12 }, randomPlanet));
+  const [planets, setPlanets] = useState(() => Array.from({ length: 10 }, randomPlanet));
+  const [gameRound, setGameRound] = useState(0); // Track which round we're on for replay
   const [clawPos, setClawPos] = useState(50); // percent
   const [cableHeight, setCableHeight] = useState(0);
   const [clawTilt, setClawTilt] = useState(0);
@@ -480,10 +481,6 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
           }
         }, 20);
       });
-
-      // Respawn a new planet (update ref + state)
-      planetsRef.current = [...planetsRef.current, randomPlanet()];
-      setPlanets([...planetsRef.current]);
     } else {
       playCling();
       setIsGrabClosed(false);
@@ -528,12 +525,14 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
         launchFireworks();
         modalTimeoutRef.current = setTimeout(() => {
           if (isPaused) return;
-          // add a new planet and close modal
-          planetsRef.current = [...planetsRef.current, randomPlanet()];
+          // Remove the grabbed planet from the machine - don't put it back
+          const grabbedId = grabbedIdRef.current;
+          planetsRef.current = planetsRef.current.filter(p => p.id !== grabbedId);
           setPlanets([...planetsRef.current]);
           closeModal();
           setSpeechFeedback(null);
           setSpeechTranscript('');
+          grabbedIdRef.current = null;
         }, 1200);
       } else {
         setSpeechFeedback('incorrect');
@@ -656,9 +655,23 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   };
 
   const handleSkip = () => {
-    planetsRef.current = [...planetsRef.current, randomPlanet()];
+    // Remove the grabbed planet when skipping
+    const grabbedId = grabbedIdRef.current;
+    planetsRef.current = planetsRef.current.filter(p => p.id !== grabbedId);
     setPlanets([...planetsRef.current]);
     closeModal();
+    grabbedIdRef.current = null;
+  };
+
+  const handleReplay = () => {
+    playClick();
+    // Reset game with 10 new planets
+    const newPlanets = Array.from({ length: 10 }, randomPlanet);
+    planetsRef.current = newPlanets;
+    setPlanets(newPlanets);
+    setGameRound(prev => prev + 1);
+    setStarsCollected(0);
+    setIsPaused(false);
   };
 
   return (
@@ -741,6 +754,12 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
           </button>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleReplay}
+            className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg transition-colors"
+          >
+            <span className="text-white font-black text-sm">🔄 REPLAY</span>
+          </button>
           <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-2">
             <span className="text-yellow-400 text-lg">⭐</span>
             <span className="text-white font-bold text-lg">{totalStars}</span>
