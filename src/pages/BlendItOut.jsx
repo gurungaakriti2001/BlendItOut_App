@@ -273,6 +273,22 @@ const SegmentBlendGame = ({ onBack }) => {
   };
 
   const handleVowelClick = (v) => {
+    // Stop wheel spinning immediately if it's currently spinning
+    if (isSpinning) {
+      // Stop and close audio context to prevent sound overlap
+      if (audioCtxRef.current) {
+        try {
+          audioCtxRef.current.close();
+        } catch (e) {}
+        audioCtxRef.current = null;
+      }
+      if (spinTimeoutRef.current) {
+        clearTimeout(spinTimeoutRef.current);
+        spinTimeoutRef.current = null;
+      }
+      setIsSpinning(false);
+      setWheelRotation(0);
+    }
     setSelectedVowel(v);
     setShowFamilyModal(true);
   };
@@ -401,7 +417,10 @@ const SegmentBlendGame = ({ onBack }) => {
           // Stop any ongoing audio and speech
           window.speechSynthesis.cancel();
           if (audioCtxRef.current) {
-            audioCtxRef.current.suspend();
+            try {
+              audioCtxRef.current.close();
+            } catch (e) {}
+            audioCtxRef.current = null;
           }
           // Stop wheel spinning and timeout
           if (spinTimeoutRef.current) {
