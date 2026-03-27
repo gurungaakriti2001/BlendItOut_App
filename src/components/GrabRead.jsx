@@ -310,10 +310,24 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   }, [handleJoyMove, handleJoyUp]);
 
   // Grab logic
-  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const sleep = async (ms) => {
+    const start = performance.now();
+    while (performance.now() - start < ms) {
+      if (pausedRef.current) {
+        await new Promise(r => setTimeout(r, 50));
+        continue;
+      }
+      await new Promise(r => setTimeout(r, 20));
+    }
+  };
 
   const animateCable = (target, speed) => new Promise(resolve => {
     const step = () => {
+      if (pausedRef.current) {
+        stopWhirr();
+        rafRef.current = requestAnimationFrame(step);
+        return;
+      }
       const done = speed > 0 ? cableHeightRef.current >= target : cableHeightRef.current <= target;
       if (done) {
         cableHeightRef.current = target;
@@ -359,7 +373,7 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   };
 
   const handleGrab = async () => {
-    if (isGrabbingRef.current) return;
+    if (isGrabbingRef.current || pausedRef.current) return;
     isGrabbingRef.current = true;
     setIsGrabbing(true);
 
@@ -398,6 +412,10 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       await new Promise(resolve => {
         const speed = 1.5;
         const step = () => {
+          if (pausedRef.current) {
+            resolve();
+            return;
+          }
           clawTiltRef.current = -speed * 2.5;
           setClawTilt(clawTiltRef.current);
             if (clawPosRef.current <= 18) {
@@ -580,7 +598,14 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-[300] backdrop-blur-sm">
           <h1 className="text-5xl mb-8 font-black text-yellow-400 uppercase italic">Paused</h1>
           <div className="flex flex-col gap-4">
-            <button onClick={() => { playClick(); setIsPaused(false); }} className="bg-[#5C6EE6] px-10 py-4 rounded-2xl border-b-4 border-[#4b5cd1] text-white text-xl font-black hover:bg-[#4b5cd1] transition-colors">▶ Resume</button>
+            <button onClick={() => {
+              if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                audioCtxRef.current.resume();
+              }
+              if (isGrabbingRef.current) startWhirr();
+              playClick();
+              setIsPaused(false);
+            }} className="bg-[#5C6EE6] px-10 py-4 rounded-2xl border-b-4 border-[#4b5cd1] text-white text-xl font-black hover:bg-[#4b5cd1] transition-colors">▶ Resume</button>
             <button onClick={() => { 
               // Stop all audio and timers
               window.speechSynthesis.cancel();
@@ -621,13 +646,20 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
           <button onClick={() => { 
             const willPause = !isPaused;
             if (willPause) {
-              // Suspend audio when pausing
+              // Suspend audio and effects when pausing
               window.speechSynthesis.cancel();
+              stopWhirr();
               if (audioCtxRef.current) audioCtxRef.current.suspend();
+              if (recognitionRef.current && typeof recognitionRef.current.stop === 'function') {
+                try { recognitionRef.current.stop(); } catch (e) {};
+              }
             } else {
-              // Resume audio when resuming
+              // Resume audio and effects when resuming
               if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
                 audioCtxRef.current.resume();
+              }
+              if (isGrabbingRef.current) {
+                startWhirr();
               }
             }
             playClick(); 

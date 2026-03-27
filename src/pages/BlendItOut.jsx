@@ -12,7 +12,6 @@ import { LETTER_AUDIO, WORD_FAMILIES, CVC_WORDS, getFamilyConsonants, getWordIma
 /**
  * Constants and Data
  */
-const POKEMON_SIZE = 140;
 const STAR_COUNT = 100;
 
 const VOWEL_DATA = [
@@ -716,30 +715,7 @@ export default function BlendItOut() {
         ))}
       </motion.div>
 
-      {/* Floating Characters */}
-      <AnimatePresence>
-          {[
-            { traj: robotTrajectory, key: robotKey, setKey: setRobotKey, size: POKEMON_SIZE, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/483.png" },
-            { traj: ufoTrajectory, key: ufoKey, setKey: setUfoKey, size: POKEMON_SIZE, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/484.png" },
-            { traj: alienTrajectory, key: alienKey, setKey: setAlienKey, size: POKEMON_SIZE, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/487.png" }
-          ].map((char, idx) => char.traj && (
-            <motion.div 
-              key={`${idx}-${char.key}`} 
-              initial={{ left: `${char.traj.startPos.x}%`, top: `${char.traj.startPos.y}%`, rotate: char.traj.rotation }} 
-              animate={{ 
-                left: `${char.traj.endPos.x}%`, 
-                top: `${char.traj.endPos.y}%`, 
-                rotate: char.traj.rotation + 10,
-                filter: view === 'home' ? 'blur(0px)' : 'blur(5px)'
-              }} 
-              transition={{ duration: char.traj.duration, ease: "linear" }} 
-              onAnimationComplete={() => { releaseCorner(char.traj.corner); char.setKey(prev => prev + 1); }} 
-              className="absolute z-10" 
-              style={{ width: char.size, height: char.size }}>
-              <img src={char.img} alt="Character" className="w-full h-full drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)] object-contain" />
-            </motion.div>
-          ))}
-      </AnimatePresence>
+      {/* Floating Characters removed per request */}
 
       {/* View Screens */}
       <AnimatePresence mode="wait">
