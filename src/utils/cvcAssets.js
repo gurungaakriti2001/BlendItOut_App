@@ -25,7 +25,7 @@ export const CVC_DATA = {
   "-et": ["bet", "get", "jet", "let", "met", "net", "pet", "set", "vet", "wet", "yet"],
   "-id": ["bid", "did", "hid", "kid", "lid", "rid"],
   "-ig": ["big", "dig", "fig", "gig", "jig", "pig", "rig", "wig"],
-  "-in": ["bin", "din", "fin", "gin", "pin", "sin", "tin", "win"],
+  "-in": ["bin", "din", "fin", "jin", "pin", "sin", "tin", "win"],
   "-ip": ["dip", "hip", "lip", "nip", "rip", "sip", "tip", "zip"],
   "-it": ["bit", "fit", "hit", "kit", "lit", "pit", "sit", "wit"],
   "-od": ["cod", "god", "nod", "pod", "rod", "sod"],
