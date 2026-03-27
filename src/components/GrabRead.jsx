@@ -98,6 +98,12 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   const audioCtxRef = useRef(null);
   const whirrRef = useRef(null);
   const lfoRef = useRef(null);
+  const pausedRef = useRef(false);
+  const confettiTimeoutRef1 = useRef(null);
+  const confettiTimeoutRef2 = useRef(null);
+  const grabTimeoutRef = useRef(null);
+  const dispenseTimeoutRef = useRef(null);
+  const modalTimeoutRef = useRef(null);
   const whirrGainRef = useRef(null);
 
   const glassRef = useRef(null);
@@ -195,9 +201,20 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   const launchFireworks = () => {
     // Multiple bursts from different positions
     confetti({ particleCount: 80, spread: 100, origin: { x: 0.3, y: 0.5 }, colors: ['#ff0', '#f0f', '#0ff', '#f60', '#0f0'] });
-    setTimeout(() => confetti({ particleCount: 80, spread: 100, origin: { x: 0.7, y: 0.4 }, colors: ['#ff0', '#f0f', '#0ff', '#f60', '#0f0'] }), 200);
-    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { x: 0.5, y: 0.3 }, colors: ['#fff', '#ff0', '#f0f'] }), 400);
+    confettiTimeoutRef1.current = setTimeout(() => {
+      if (isPaused) return;
+      confetti({ particleCount: 80, spread: 100, origin: { x: 0.7, y: 0.4 }, colors: ['#ff0', '#f0f', '#0ff', '#f60', '#0f0'] });
+    }, 200);
+    confettiTimeoutRef2.current = setTimeout(() => {
+      if (isPaused) return;
+      confetti({ particleCount: 60, spread: 120, origin: { x: 0.5, y: 0.3 }, colors: ['#fff', '#ff0', '#f0f'] });
+    }, 400);
   };
+
+  useEffect(() => {
+    pausedRef.current = isPaused;
+  }, [isPaused]);
+
   const playPloop = () => {
     initAudio();
     const ctx = audioCtxRef.current;
@@ -215,36 +232,38 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   // Physics loop
   useEffect(() => {
     const loop = () => {
-      // update claw physics
-      if (!isGrabbingRef.current) {
-        const targetVel = stickXRef.current * 3.5;
-        clawVelRef.current += (targetVel - clawVelRef.current) * 0.2;
-        clawPosRef.current = Math.max(15, Math.min(85, clawPosRef.current + clawVelRef.current));
-        const targetTilt = clawVelRef.current * 2.5;
-        clawTiltRef.current += (targetTilt - clawTiltRef.current) * 0.1;
-        setClawPos(clawPosRef.current);
-        setClawTilt(clawTiltRef.current);
-      } else {
-        clawTiltRef.current *= 0.95;
-        setClawTilt(clawTiltRef.current);
+      if (!pausedRef.current) {
+        // update claw physics
+        if (!isGrabbingRef.current) {
+          const targetVel = stickXRef.current * 3.5;
+          clawVelRef.current += (targetVel - clawVelRef.current) * 0.2;
+          clawPosRef.current = Math.max(15, Math.min(85, clawPosRef.current + clawVelRef.current));
+          const targetTilt = clawVelRef.current * 2.5;
+          clawTiltRef.current += (targetTilt - clawTiltRef.current) * 0.1;
+          setClawPos(clawPosRef.current);
+          setClawTilt(clawTiltRef.current);
+        } else {
+          clawTiltRef.current *= 0.95;
+          setClawTilt(clawTiltRef.current);
+        }
+
+        // update planet physics in ref to avoid constant re-renders
+        const next = planetsRef.current.map(p => {
+          if (p.isGrabbed) return p;
+          let { x, y, vx, vy } = p;
+          vy -= 0.1;
+          x += vx;
+          y += vy;
+          if (y < 15) { y = 15; vy *= -0.15; vx *= 0.9; }
+          if (x < 30 || x > 82) { vx *= -0.6; x = Math.max(30, Math.min(82, x)); }
+          return { ...p, x, y, vx, vy };
+        });
+        planetsRef.current = next;
+
+        // sync to state at ~15 FPS to reduce React work
+        planetSyncCounterRef.current = (planetSyncCounterRef.current + 1) % 4;
+        if (planetSyncCounterRef.current === 0) setPlanets([...planetsRef.current]);
       }
-
-      // update planet physics in ref to avoid constant re-renders
-      const next = planetsRef.current.map(p => {
-        if (p.isGrabbed) return p;
-        let { x, y, vx, vy } = p;
-        vy -= 0.1;
-        x += vx;
-        y += vy;
-        if (y < 15) { y = 15; vy *= -0.15; vx *= 0.9; }
-        if (x < 30 || x > 82) { vx *= -0.6; x = Math.max(30, Math.min(82, x)); }
-        return { ...p, x, y, vx, vy };
-      });
-      planetsRef.current = next;
-
-      // sync to state at ~15 FPS to reduce React work
-      planetSyncCounterRef.current = (planetSyncCounterRef.current + 1) % 4;
-      if (planetSyncCounterRef.current === 0) setPlanets([...planetsRef.current]);
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -489,7 +508,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
         if (onStarEarned) onStarEarned(1);
         playFireworkSound();
         launchFireworks();
-        setTimeout(() => {
+        modalTimeoutRef.current = setTimeout(() => {
+          if (isPaused) return;
           // add a new planet and close modal
           planetsRef.current = [...planetsRef.current, randomPlanet()];
           setPlanets([...planetsRef.current]);
@@ -561,7 +581,20 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
           <h1 className="text-5xl mb-8 font-black text-yellow-400 uppercase italic">Paused</h1>
           <div className="flex flex-col gap-4">
             <button onClick={() => { playClick(); setIsPaused(false); }} className="bg-[#5C6EE6] px-10 py-4 rounded-2xl border-b-4 border-[#4b5cd1] text-white text-xl font-black hover:bg-[#4b5cd1] transition-colors">▶ Resume</button>
-            <button onClick={() => { playClick(); onBack(); }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
+            <button onClick={() => { 
+              // Stop all audio and timers
+              window.speechSynthesis.cancel();
+              if (audioCtxRef.current) audioCtxRef.current.suspend();
+              cancelAnimationFrame(rafRef.current);
+              if (confettiTimeoutRef1.current) clearTimeout(confettiTimeoutRef1.current);
+              if (confettiTimeoutRef2.current) clearTimeout(confettiTimeoutRef2.current);
+              if (grabTimeoutRef.current) clearTimeout(grabTimeoutRef.current);
+              if (dispenseTimeoutRef.current) clearTimeout(dispenseTimeoutRef.current);
+              if (modalTimeoutRef.current) clearTimeout(modalTimeoutRef.current);
+              try { if (recognitionRef.current && typeof recognitionRef.current.stop === 'function') recognitionRef.current.stop(); } catch (e) {}
+              playClick(); 
+              onBack(); 
+            }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
           </div>
         </div>
       )}
@@ -569,10 +602,37 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       {/* Top button bar */}
       <div className="absolute top-3 left-3 right-3 z-[200] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => { playClick(); onBack(); }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+          <button onClick={() => { 
+            // Stop all audio and timers
+            window.speechSynthesis.cancel();
+            if (audioCtxRef.current) audioCtxRef.current.suspend();
+            cancelAnimationFrame(rafRef.current);
+            if (confettiTimeoutRef1.current) clearTimeout(confettiTimeoutRef1.current);
+            if (confettiTimeoutRef2.current) clearTimeout(confettiTimeoutRef2.current);
+            if (grabTimeoutRef.current) clearTimeout(grabTimeoutRef.current);
+            if (dispenseTimeoutRef.current) clearTimeout(dispenseTimeoutRef.current);
+            if (modalTimeoutRef.current) clearTimeout(modalTimeoutRef.current);
+            try { if (recognitionRef.current && typeof recognitionRef.current.stop === 'function') recognitionRef.current.stop(); } catch (e) {}
+            playClick(); 
+            onBack(); 
+          }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white text-xl font-black">←</span>
           </button>
-          <button onClick={() => { playClick(); setIsPaused(p => !p); }} className="w-10 h-10 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
+          <button onClick={() => { 
+            const willPause = !isPaused;
+            if (willPause) {
+              // Suspend audio when pausing
+              window.speechSynthesis.cancel();
+              if (audioCtxRef.current) audioCtxRef.current.suspend();
+            } else {
+              // Resume audio when resuming
+              if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                audioCtxRef.current.resume();
+              }
+            }
+            playClick(); 
+            setIsPaused(willPause); 
+          }} className="w-10 h-10 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
             <span className="text-white font-black text-sm">⏸</span>
           </button>
         </div>

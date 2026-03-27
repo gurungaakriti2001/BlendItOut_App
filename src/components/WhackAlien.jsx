@@ -41,8 +41,11 @@ const calculateStars = (streak) => {
   return Math.floor(streak / 5) * 3;
 };
 
-const playChildrenYay = () => {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const playChildrenYay = (audioCtxRef) => {
+  if (!audioCtxRef.current) {
+    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  const ctx = audioCtxRef.current;
   if (ctx.state === 'suspended') ctx.resume();
   // Simulate multiple children voices cheering with overlapping excited tones
   const voices = [
@@ -90,9 +93,8 @@ const playChildrenYay = () => {
   shout.start(ctx.currentTime + 0.1); shout.stop(ctx.currentTime + 0.7);
 };
 
-const AlienHole = ({ word, isUp, onClick, isLocked }) => {
+const AlienHole = ({ word, isUp, onClick, isLocked, hitTimeoutRef, audioCtxRef, isPaused }) => {
   const [isHit, setIsHit] = useState(false);
-  const audioCtxRef = useRef(null);
 
   const playWhack = () => {
     if (!audioCtxRef.current) {
@@ -117,7 +119,10 @@ const AlienHole = ({ word, isUp, onClick, isLocked }) => {
     if (!isUp || isLocked) return;
     setIsHit(true);
     playWhack();
-    setTimeout(() => setIsHit(false), 400);
+    hitTimeoutRef.current = setTimeout(() => {
+      if (isPaused) return;
+      setIsHit(false);
+    }, 400);
     onClick(word);
   };
 
@@ -205,6 +210,13 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
   const [showConfetti, setShowConfetti] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
 
+  const roundTimeoutRef = useRef(null);
+  const confettiTimeoutRef = useRef(null);
+  const aliensTimeoutRef = useRef(null);
+  const nextRoundTimeoutRef = useRef(null);
+  const hitTimeoutRef = useRef(null);
+  const audioCtxRef = useRef(null);
+
   const speakWord = useCallback((word) => {
     speak(word);
   }, [speak]);
@@ -223,7 +235,8 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
     setAlienWords(roundWords);
     setFeedback('Listen carefully!');
     setRoundLock(false);
-    setTimeout(() => {
+    roundTimeoutRef.current = setTimeout(() => {
+      if (isPaused) return;
       setAliensUp(Array(numHoles).fill(true));
       speakWord(newTarget);
     }, 500);
@@ -244,11 +257,20 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
       if (onStarEarned) onStarEarned(1);
       const nextHoles = newStreak >= 10 ? 9 : (newStreak >= 5 ? 6 : 3);
       setFeedback('Great Job! 🌟');
-      playChildrenYay();
+      playChildrenYay(audioCtxRef);
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2000);
-      setTimeout(() => setAliensUp(prev => prev.map(() => false)), 500);
-      setTimeout(() => generateRound(nextHoles), 1500);
+      confettiTimeoutRef.current = setTimeout(() => {
+        if (isPaused) return;
+        setShowConfetti(false);
+      }, 2000);
+      aliensTimeoutRef.current = setTimeout(() => {
+        if (isPaused) return;
+        setAliensUp(prev => prev.map(() => false));
+      }, 500);
+      nextRoundTimeoutRef.current = setTimeout(() => {
+        if (isPaused) return;
+        generateRound(nextHoles);
+      }, 1500);
     } else {
       setFinalScore(streak);
       setGameState('gameover');
@@ -265,7 +287,19 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
           <h1 className="text-5xl mb-8 font-black text-yellow-400 uppercase italic">Paused</h1>
           <div className="flex flex-col gap-4">
             <button onClick={() => { playClick(); setIsPaused(false); }} className="bg-[#5C6EE6] px-10 py-4 rounded-2xl border-b-4 border-[#4b5cd1] text-white text-xl font-black hover:bg-[#4b5cd1] transition-colors">▶ Resume</button>
-            <button onClick={() => { playClick(); onBack(); }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
+            <button onClick={() => { 
+              // Stop all audio and timers
+              window.speechSynthesis.cancel();
+              if (audioCtxRef.current) audioCtxRef.current.suspend();
+              if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+              if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+              if (aliensTimeoutRef.current) clearTimeout(aliensTimeoutRef.current);
+              if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+              if (hitTimeoutRef.current) clearTimeout(hitTimeoutRef.current);
+              setShowConfetti(false);
+              playClick(); 
+              onBack(); 
+            }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
           </div>
         </div>
       )}
@@ -273,10 +307,36 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-md border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <button onClick={() => { playClick(); onBack(); }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+          <button onClick={() => { 
+            // Stop all audio and timers
+            window.speechSynthesis.cancel();
+            if (audioCtxRef.current) audioCtxRef.current.suspend();
+            if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+            if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+            if (aliensTimeoutRef.current) clearTimeout(aliensTimeoutRef.current);
+            if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+            if (hitTimeoutRef.current) clearTimeout(hitTimeoutRef.current);
+            setShowConfetti(false);
+            playClick(); 
+            onBack(); 
+          }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white text-xl font-black">←</span>
           </button>
-          <button onClick={() => { playClick(); setIsPaused(p => !p); }} className="w-10 h-10 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
+          <button onClick={() => { 
+            const willPause = !isPaused;
+            if (willPause) {
+              // Suspend audio when pausing
+              window.speechSynthesis.cancel();
+              if (audioCtxRef.current) audioCtxRef.current.suspend();
+            } else {
+              // Resume audio when resuming
+              if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                audioCtxRef.current.resume();
+              }
+            }
+            playClick(); 
+            setIsPaused(willPause); 
+          }} className="w-10 h-10 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
             <span className="text-white font-black text-sm">⏸</span>
           </button>
         </div>
@@ -297,7 +357,7 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
               {/* Start Screen */}
               {gameState === 'start' && (
                 <div className="flex flex-col items-center py-8 gap-6">
-                  <AlienHole word="CVC" isUp={true} onClick={() => {}} isLocked={true} />
+                  <AlienHole word="CVC" isUp={true} onClick={() => {}} isLocked={true} hitTimeoutRef={hitTimeoutRef} audioCtxRef={audioCtxRef} isPaused={isPaused} />
                   <p className="text-lg text-indigo-200 max-w-sm">
                     Listen to the word, then whack the alien holding the correct sign!
                   </p>
@@ -335,12 +395,27 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
                     isUp={aliensUp[index]}
                     onClick={handleWhack}
                     isLocked={roundLock}
+                    hitTimeoutRef={hitTimeoutRef}
+                    audioCtxRef={audioCtxRef}
+                    isPaused={isPaused}
                   />
                 ))}
               </div>
 
               <button
-                onClick={() => { playClick(); onBack(); }}
+                onClick={() => { 
+                  // Stop all audio and timers
+                  window.speechSynthesis.cancel();
+                  if (audioCtxRef.current) audioCtxRef.current.suspend();
+                  if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+                  if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+                  if (aliensTimeoutRef.current) clearTimeout(aliensTimeoutRef.current);
+                  if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+                  if (hitTimeoutRef.current) clearTimeout(hitTimeoutRef.current);
+                  setShowConfetti(false);
+                  playClick(); 
+                  onBack(); 
+                }}
                 className="mt-10 text-indigo-300 hover:text-white flex items-center gap-2 transition-colors"
               >
                 <RotateCcw size={18} />
@@ -358,7 +433,19 @@ export default function WhackAlien({ onBack, speak, playClick = () => {}, onSett
                     <Play fill="currentColor" size={24} />
                     TRY AGAIN
                   </button>
-                  <button onClick={() => { playClick(); onBack(); }} className="text-white/60 underline text-lg">Back</button>
+                  <button onClick={() => { 
+                    // Stop all audio and timers
+                    window.speechSynthesis.cancel();
+                    if (audioCtxRef.current) audioCtxRef.current.suspend();
+                    if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+                    if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+                    if (aliensTimeoutRef.current) clearTimeout(aliensTimeoutRef.current);
+                    if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+                    if (hitTimeoutRef.current) clearTimeout(hitTimeoutRef.current);
+                    setShowConfetti(false);
+                    playClick(); 
+                    onBack(); 
+                  }} className="text-white/60 underline text-lg">Back</button>
                 </div>
               )}
               </div>

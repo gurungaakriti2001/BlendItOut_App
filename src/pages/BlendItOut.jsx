@@ -229,6 +229,7 @@ const SegmentBlendGame = ({ onBack }) => {
   const svgPathRef = useRef(null);
   const rocketRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const spinTimeoutRef = useRef(null);
 
   const playWheelSpin = () => {
     if (!audioCtxRef.current) {
@@ -299,7 +300,7 @@ const SegmentBlendGame = ({ onBack }) => {
     const idx = Math.floor(Math.random() * count);
     const newRot = (Math.ceil(wheelRotation / 360) * 360) + 1800 + (360 - ((idx * segAngle) + segAngle / 2));
     setWheelRotation(newRot);
-    setTimeout(() => {
+    spinTimeoutRef.current = setTimeout(() => {
       const seg = wheelSegments[idx];
       setCurrentConsonant(seg.c);
       setCurrentImage(seg.i);
@@ -397,7 +398,23 @@ const SegmentBlendGame = ({ onBack }) => {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-md border-b border-white/10">
-        <button onClick={() => { playClick(); onBack(); }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+        <button onClick={() => { 
+          // Stop any ongoing audio and speech
+          window.speechSynthesis.cancel();
+          if (audioCtxRef.current) {
+            audioCtxRef.current.suspend();
+          }
+          // Stop wheel spinning and timeout
+          if (spinTimeoutRef.current) {
+            clearTimeout(spinTimeoutRef.current);
+            spinTimeoutRef.current = null;
+          }
+          setIsSpinning(false);
+          setWheelRotation(0);
+          stopDragging();
+          playClick(); 
+          onBack(); 
+        }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
           <span className="text-white text-xl font-black">←</span>
         </button>
         <h2 className="text-white text-2xl md:text-4xl font-black uppercase italic tracking-tighter">Segment &amp; Blend</h2>

@@ -13,11 +13,16 @@ const LEFT_COLORS  = ['#FDE68A', '#FDBA74', '#FCA5A5'];
 const RIGHT_COLORS = ['#F87171', '#FDBA74', '#FDE68A'];
 
 // Re-use the speak function from parent scope via prop
-function Confetti({ onDone }) {
+function Confetti({ onDone, timeoutRef }) {
   useEffect(() => {
-    const t = setTimeout(onDone, 2800);
-    return () => clearTimeout(t);
-  }, [onDone]);
+    timeoutRef.current = setTimeout(onDone, 2800);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [onDone, timeoutRef]);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
@@ -64,6 +69,8 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
   const audioQueueRef = useRef([]);
   const audioFinishedRef = useRef(null);
   const audioStateRef = useRef({ consonantVowelPlayed: false, endingPlayed: false });
+  const buildTimeoutRef = useRef(null);
+  const confettiTimeoutRef = useRef(null);
 
   const playPlink = () => {
     if (!audioCtxRef.current) {
@@ -224,7 +231,7 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
     setStarsCollected(prev => prev + 1);
     if (onStarEarned) onStarEarned(1);
     // wait for all audio to complete before speaking the word (800ms ensures letter audio finishes)
-    setTimeout(() => { 
+    buildTimeoutRef.current = setTimeout(() => { 
       speak(word);
       setShowConfetti(true);
     }, 800);
@@ -330,7 +337,23 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
           <h1 className="text-5xl mb-8 font-black text-yellow-400 uppercase italic">Paused</h1>
           <div className="flex flex-col gap-4">
             <button onClick={() => { playClick(); setIsPaused(false); }} className="bg-[#5C6EE6] px-10 py-4 rounded-2xl border-b-4 border-[#4b5cd1] text-white text-xl font-black hover:bg-[#4b5cd1] transition-colors">▶ Resume</button>
-            <button onClick={() => { playClick(); onBack(); }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
+            <button onClick={() => { 
+              // Stop all audio and timers
+              window.speechSynthesis.cancel();
+              if (audioCtxRef.current) audioCtxRef.current.suspend();
+              stopAudio();
+              if (buildTimeoutRef.current) {
+                clearTimeout(buildTimeoutRef.current);
+                buildTimeoutRef.current = null;
+              }
+              if (confettiTimeoutRef.current) {
+                clearTimeout(confettiTimeoutRef.current);
+                confettiTimeoutRef.current = null;
+              }
+              setShowConfetti(false);
+              playClick(); 
+              onBack(); 
+            }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
           </div>
         </div>
       )}
@@ -338,7 +361,23 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center gap-2">
-          <button onClick={() => { playClick(); onBack(); }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+          <button onClick={() => { 
+            // Stop all audio and timers
+            window.speechSynthesis.cancel();
+            if (audioCtxRef.current) audioCtxRef.current.suspend();
+            stopAudio();
+            if (buildTimeoutRef.current) {
+              clearTimeout(buildTimeoutRef.current);
+              buildTimeoutRef.current = null;
+            }
+            if (confettiTimeoutRef.current) {
+              clearTimeout(confettiTimeoutRef.current);
+              confettiTimeoutRef.current = null;
+            }
+            setShowConfetti(false);
+            playClick(); 
+            onBack(); 
+          }} className="w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white text-xl font-black">←</span>
           </button>
           <button onClick={() => { playClick(); setIsPaused(p => !p); }} className="w-10 h-10 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors">
@@ -357,7 +396,7 @@ export default function CVCConnect({ onBack, speak, playClick = () => {}, onSett
         </div>
       </div>
 
-      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} timeoutRef={confettiTimeoutRef} />}
 
       {/* Vowel row */}
       <div className="flex justify-center gap-2 sm:gap-4 px-3 py-3 bg-white/5">

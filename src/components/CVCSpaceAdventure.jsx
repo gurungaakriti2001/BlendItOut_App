@@ -48,6 +48,13 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
   const containerRef = useRef(null);
   const audioCtxRef = useRef(null);
   const countdownOscRef = useRef(null);
+  const statusTimeoutRef = useRef(null);
+  const speakTimeoutRef = useRef(null);
+  const feedbackTimeoutRef = useRef(null);
+  const bumpTimeoutRef = useRef(null);
+  const starTimeoutRef = useRef(null);
+  const nextWordsTimeoutRef = useRef(null);
+  const solvedTimeoutRef = useRef(null);
 
   const initAudio = () => {
     if (!audioCtxRef.current) {
@@ -96,7 +103,10 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
 
   const speakWord = useCallback((word) => {
     setStatusVisible(true);
-    setTimeout(() => setStatusVisible(false), 1200);
+    statusTimeoutRef.current = setTimeout(() => {
+      if (gameState === 'paused') return;
+      setStatusVisible(false);
+    }, 1200);
     if (speak) {
       speak(word.toLowerCase());
     } else {
@@ -105,7 +115,7 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
       msg.pitch = 1.1;
       window.speechSynthesis.speak(msg);
     }
-  }, [speak]);
+  }, [speak, gameState]);
 
   const getRandomWords = useCallback((isInitial = false) => {
     let newOptions = [];
@@ -124,7 +134,10 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
     setSolvedIndex(null);
     setStarIndex(null);
     setBumpedIndex(null);
-    setTimeout(() => speakWord(target), isInitial ? 300 : 50);
+    speakTimeoutRef.current = setTimeout(() => {
+      if (gameState === 'paused') return;
+      speakWord(target);
+    }, isInitial ? 300 : 50);
   }, [speakWord]);
 
   const startGame = () => {
@@ -182,8 +195,10 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
     }
 
     setTimeout(() => {
+      if (gameState === 'paused') return;
       setJumping(true);
       setTimeout(() => {
+        if (gameState === 'paused') return;
         setBumpedIndex(index);
         if (word === currentTarget) {
           playTing();
@@ -193,12 +208,19 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
           showFeedback('YES! ⭐', true);
           setStarIndex(index);
           setSolvedIndex(index);
-          setTimeout(() => getRandomWords(), 900);
+          nextWordsTimeoutRef.current = setTimeout(() => {
+            if (gameState === 'paused') return;
+            getRandomWords();
+          }, 900);
         } else {
           showFeedback('NO! ❌', false);
-          setTimeout(() => setBumpedIndex(null), 200);
+          bumpTimeoutRef.current = setTimeout(() => {
+            if (gameState === 'paused') return;
+            setBumpedIndex(null);
+          }, 200);
         }
-        setTimeout(() => {
+        starTimeoutRef.current = setTimeout(() => {
+          if (gameState === 'paused') return;
           setJumping(false);
           setIsMoving(false);
         }, 700);
@@ -208,7 +230,10 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
 
   const showFeedback = (text, correct) => {
     setFeedback({ text, correct });
-    setTimeout(() => setFeedback(null), 800);
+    feedbackTimeoutRef.current = setTimeout(() => {
+      if (gameState === 'paused') return;
+      setFeedback(null);
+    }, 800);
   };
 
   const oxygenPct = (timeLeft / MAX_TIME) * 100;
@@ -237,7 +262,21 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
       {/* Pause Screen */}
       {gameState === 'paused' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-[100]">
-          <button onClick={() => { playClick(); onBack(); }} className="absolute top-6 left-6 w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+          <button onClick={() => { 
+            // Stop all audio and timers
+            window.speechSynthesis.cancel();
+            if (audioCtxRef.current) audioCtxRef.current.suspend();
+            clearInterval(timerRef.current);
+            if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+            if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+            if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+            if (bumpTimeoutRef.current) clearTimeout(bumpTimeoutRef.current);
+            if (starTimeoutRef.current) clearTimeout(starTimeoutRef.current);
+            if (nextWordsTimeoutRef.current) clearTimeout(nextWordsTimeoutRef.current);
+            if (solvedTimeoutRef.current) clearTimeout(solvedTimeoutRef.current);
+            playClick(); 
+            onBack(); 
+          }} className="absolute top-6 left-6 w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white text-xl font-black">←</span>
           </button>
           <h1 className="text-5xl mb-8 font-bold text-yellow-400">MISSION PAUSED</h1>
@@ -246,7 +285,21 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
               onClick={() => { playClick(); setGameState('playing'); }}
               className="bg-blue-600 px-10 py-6 rounded-2xl border-b-8 border-blue-800 hover:bg-blue-500 text-2xl font-bold text-white"
             >RESUME</button>
-            <button onClick={() => { playClick(); onBack(); }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
+            <button onClick={() => { 
+              // Stop all audio and timers
+              window.speechSynthesis.cancel();
+              if (audioCtxRef.current) audioCtxRef.current.suspend();
+              clearInterval(timerRef.current);
+              if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+              if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+              if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+              if (bumpTimeoutRef.current) clearTimeout(bumpTimeoutRef.current);
+              if (starTimeoutRef.current) clearTimeout(starTimeoutRef.current);
+              if (nextWordsTimeoutRef.current) clearTimeout(nextWordsTimeoutRef.current);
+              if (solvedTimeoutRef.current) clearTimeout(solvedTimeoutRef.current);
+              playClick(); 
+              onBack(); 
+            }} className="bg-[#F48D8A] px-10 py-4 rounded-2xl border-b-4 border-[#d97773] text-white text-xl font-black hover:bg-[#d97773] transition-colors">← Back to Challenge</button>
           </div>
         </div>
       )}
@@ -254,13 +307,41 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-[100]">
-          <button onClick={() => { playClick(); onBack(); }} className="absolute top-6 left-6 w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+          <button onClick={() => { 
+            // Stop all audio and timers
+            window.speechSynthesis.cancel();
+            if (audioCtxRef.current) audioCtxRef.current.suspend();
+            clearInterval(timerRef.current);
+            if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+            if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+            if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+            if (bumpTimeoutRef.current) clearTimeout(bumpTimeoutRef.current);
+            if (starTimeoutRef.current) clearTimeout(starTimeoutRef.current);
+            if (nextWordsTimeoutRef.current) clearTimeout(nextWordsTimeoutRef.current);
+            if (solvedTimeoutRef.current) clearTimeout(solvedTimeoutRef.current);
+            playClick(); 
+            onBack(); 
+          }} className="absolute top-6 left-6 w-10 h-10 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white text-xl font-black">←</span>
           </button>
           <h1 className="text-5xl md:text-6xl mb-4 font-bold text-red-500">OUT OF OXYGEN!</h1>
           <p className="text-2xl md:text-3xl mb-8 text-white">Stars collected: <span className="text-yellow-400 font-bold">{finalScore}</span></p>
           <button onClick={() => { playClick(); startGame(); }} className="bg-green-600 px-10 py-6 rounded-2xl border-b-8 border-green-800 text-2xl font-bold text-white mb-4">TRY AGAIN</button>
-          <button onClick={() => { playClick(); onBack(); }} className="text-white/60 underline text-lg">Back</button>
+          <button onClick={() => { 
+            // Stop all audio and timers
+            window.speechSynthesis.cancel();
+            if (audioCtxRef.current) audioCtxRef.current.suspend();
+            clearInterval(timerRef.current);
+            if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+            if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+            if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+            if (bumpTimeoutRef.current) clearTimeout(bumpTimeoutRef.current);
+            if (starTimeoutRef.current) clearTimeout(starTimeoutRef.current);
+            if (nextWordsTimeoutRef.current) clearTimeout(nextWordsTimeoutRef.current);
+            if (solvedTimeoutRef.current) clearTimeout(solvedTimeoutRef.current);
+            playClick(); 
+            onBack(); 
+          }} className="text-white/60 underline text-lg">Back</button>
         </div>
       )}
 
@@ -269,11 +350,39 @@ export default function CVCSpaceAdventure({ onBack, speak, playClick = () => {},
         style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(10px)', borderBottom: '4px solid #334155' }}>
         {/* Left: Back + Pause + Settings */}
         <div className="flex items-center gap-2">
-          <button onClick={() => { playClick(); onBack(); }} className="w-9 h-9 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
+          <button onClick={() => { 
+            // Stop all audio and timers
+            window.speechSynthesis.cancel();
+            if (audioCtxRef.current) audioCtxRef.current.suspend();
+            clearInterval(timerRef.current);
+            if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+            if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+            if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+            if (bumpTimeoutRef.current) clearTimeout(bumpTimeoutRef.current);
+            if (starTimeoutRef.current) clearTimeout(starTimeoutRef.current);
+            if (nextWordsTimeoutRef.current) clearTimeout(nextWordsTimeoutRef.current);
+            if (solvedTimeoutRef.current) clearTimeout(solvedTimeoutRef.current);
+            playClick(); 
+            onBack(); 
+          }} className="w-9 h-9 bg-[#F48D8A] rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white font-black text-lg">←</span>
           </button>
           <button
-            onClick={() => { playClick(); setGameState(g => g === 'playing' ? 'paused' : 'playing'); }}
+            onClick={() => { 
+              const willPause = gameState === 'playing';
+              if (willPause) {
+                // Suspend audio when pausing
+                window.speechSynthesis.cancel();
+                if (audioCtxRef.current) audioCtxRef.current.suspend();
+              } else {
+                // Resume audio when resuming
+                if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                  audioCtxRef.current.resume();
+                }
+              }
+              playClick(); 
+              setGameState(g => g === 'playing' ? 'paused' : 'playing'); 
+            }}
             className="w-9 h-9 bg-[#5C6EE6] hover:bg-[#4b5cd1] border border-white/20 shadow-lg rounded-xl flex items-center justify-center transition-colors"
           >
             <span className="text-white font-black text-sm">⏸</span>
