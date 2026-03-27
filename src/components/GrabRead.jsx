@@ -520,7 +520,7 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       const result = event.results[0][0].transcript.toLowerCase().trim();
       setSpeechTranscript(result);
       const target = modalRef.current?.word?.toLowerCase();
-      if (target && result.includes(target)) {
+      if (target && isSpeechMatch(result, target)) {
         setSpeechFeedback('correct');
         setStarsCollected(prev => prev + 1);
         if (onStarEarned) onStarEarned(1);
@@ -581,6 +581,78 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
     } catch (e) {
       console.warn(e);
     }
+  };
+
+  // Fuzzy matching for lenient speech recognition
+  const isSpeechMatch = (recognized, target) => {
+    // Remove extra whitespace and convert to lowercase
+    const r = recognized.toLowerCase().trim();
+    const t = target.toLowerCase().trim();
+    
+    // Exact match
+    if (r === t) return true;
+    
+    // Target is contained in recognized text
+    if (r.includes(t)) return true;
+    
+    // Check if recognized text is contained in target (target is "cat" and user said "ca")
+    if (t.includes(r) && r.length >= Math.ceil(t.length * 0.6)) return true;
+    
+    // CVC Word vowel tolerance: for 3-letter words, require correct vowel but allow extra letters
+    if (t.length === 3) {
+      const consonants = /^([bcdfghjklmnpqrstvwxyz])([aeiou])([bcdfghjklmnpqrstvwxyz])$/i;
+      const tMatch = t.match(consonants);
+      if (tMatch) {
+        const targetFirstConsonant = tMatch[1];
+        const targetVowel = tMatch[2];
+        const targetLastConsonant = tMatch[3];
+        
+        // For recognized word: must start with same first consonant, end with same last consonant, and contain the target vowel
+        const rLower = r.toLowerCase();
+        if (rLower[0] === targetFirstConsonant && 
+            rLower[rLower.length - 1] === targetLastConsonant &&
+            rLower.includes(targetVowel)) {
+          return true;
+        }
+      }
+    }
+    
+    // Phonetic similarity: remove common vowel variations and check again (accent tolerance)
+    const rPhonetic = r.replace(/[aeiou]/g, '').replace(/[\s-]/g, '');
+    const tPhonetic = t.replace(/[aeiou]/g, '').replace(/[\s-]/g, '');
+    if (rPhonetic === tPhonetic && rPhonetic.length >= 2) return true;
+    
+    // Levenshtein distance: only for longer words (5+ letters) to catch minor speech recognition errors
+    // This prevents accepting wrong final consonants on short words
+    if (t.length >= 5) {
+      const levenDist = getLevenshteinDistance(r, t);
+      const maxDist = Math.floor(t.length * 0.2); // Allow 20% character difference only for long words
+      if (levenDist <= maxDist && maxDist > 0) return true;
+    }
+    
+    return false;
+  };
+
+  const getLevenshteinDistance = (str1, str2) => {
+    const track = Array(str2.length + 1).fill(null).map(() =>
+      Array(str1.length + 1).fill(null));
+    for (let i = 0; i <= str1.length; i += 1) {
+      track[0][i] = i;
+    }
+    for (let j = 0; j <= str2.length; j += 1) {
+      track[j][0] = j;
+    }
+    for (let j = 1; j <= str2.length; j += 1) {
+      for (let i = 1; i <= str1.length; i += 1) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        track[j][i] = Math.min(
+          track[j][i - 1] + 1,
+          track[j - 1][i] + 1,
+          track[j - 1][i - 1] + indicator
+        );
+      }
+    }
+    return track[str2.length][str1.length];
   };
 
   const handleSkip = () => {
