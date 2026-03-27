@@ -517,6 +517,13 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       const result = event.results[0][0].transcript.toLowerCase().trim();
       setSpeechTranscript(result);
       const target = modalRef.current?.word?.toLowerCase();
+      
+      // Skip if no actual speech detected
+      if (!result) {
+        setIsListening(false);
+        return;
+      }
+      
       if (target && isSpeechMatch(result, target)) {
         setSpeechFeedback('correct');
         setStarsCollected(prev => prev + 1);
@@ -546,10 +553,14 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       setIsListening(false);
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      // Ignore no-speech and audio-capture errors - don't show feedback
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        setIsListening(false);
+        return;
+      }
       setSpeechFeedback('incorrect');
       setIsListening(false);
-      // leave error message visible until player clicks mic to try again
     };
 
     recognitionRef.current = recognition;
@@ -563,6 +574,9 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
   useEffect(() => {
     modalRef.current = modal;
     if (modal && recognitionRef.current && !isListening && speechFeedback !== 'incorrect') {
+      // Clear previous state when new modal opens (new planet grabbed)
+      setSpeechFeedback(null);
+      setSpeechTranscript('');
       // small delay to allow UI to settle
       setTimeout(() => {
         try { recognitionRef.current.start(); } catch (e) {}
@@ -582,76 +596,83 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
     }
   };
 
-  // Fuzzy matching for lenient speech recognition
+  // Regex for CVC word pattern (cached for performance)
+  const CVC_PATTERN = /^([bcdfghjklmnpqrstvwxyz])([aeiou])([bcdfghjklmnpqrstvwxyz])$/i;
+
+  // Optimized fuzzy matching for lenient speech recognition
   const isSpeechMatch = (recognized, target) => {
-    // Remove extra whitespace and convert to lowercase
     const r = recognized.toLowerCase().trim();
     const t = target.toLowerCase().trim();
     
-    // Exact match
+    // Fast exit: exact match
     if (r === t) return true;
+    if (r.length === 0 || t.length === 0) return false;
     
-    // Target is contained in recognized text
+    // Fast check: target contained in recognized
     if (r.includes(t)) return true;
     
-    // Check if recognized text is contained in target (target is "cat" and user said "ca")
+    // Check partial match (target is "cat" and user said "ca")
     if (t.includes(r) && r.length >= Math.ceil(t.length * 0.6)) return true;
     
-    // CVC Word vowel tolerance: for 3-letter words, require correct vowel but allow extra letters
-    if (t.length === 3) {
-      const consonants = /^([bcdfghjklmnpqrstvwxyz])([aeiou])([bcdfghjklmnpqrstvwxyz])$/i;
-      const tMatch = t.match(consonants);
+    // CVC Word special handling: for 3-letter words only
+    if (t.length === 3 && r.length >= 3) {
+      const tMatch = t.match(CVC_PATTERN);
       if (tMatch) {
-        const targetFirstConsonant = tMatch[1];
-        const targetVowel = tMatch[2];
-        const targetLastConsonant = tMatch[3];
+        // Extract target structure
+        const [, tFirst, tVowel, tLast] = tMatch;
+        const rFirst = r[0];
+        const rLast = r[r.length - 1];
         
-        // For recognized word: must start with same first consonant, end with same last consonant, and contain the target vowel
-        const rLower = r.toLowerCase();
-        if (rLower[0] === targetFirstConsonant && 
-            rLower[rLower.length - 1] === targetLastConsonant &&
-            rLower.includes(targetVowel)) {
+        // Must match first consonant, last consonant, and contain correct vowel
+        if (rFirst === tFirst && rLast === tLast && r.includes(tVowel)) {
           return true;
         }
       }
     }
     
-    // Phonetic similarity: remove common vowel variations and check again (accent tolerance)
-    const rPhonetic = r.replace(/[aeiou]/g, '').replace(/[\s-]/g, '');
-    const tPhonetic = t.replace(/[aeiou]/g, '').replace(/[\s-]/g, '');
-    if (rPhonetic === tPhonetic && rPhonetic.length >= 2) return true;
+    // Fast phonetic check: remove vowels and compare consonant structure
+    if (t.length <= 4) { // Only for short words (faster)
+      const rPhonetic = r.replace(/[aeiou\s-]/g, '');
+      const tPhonetic = t.replace(/[aeiou\s-]/g, '');
+      if (rPhonetic === tPhonetic && rPhonetic.length >= 2) return true;
+    }
     
-    // Levenshtein distance: only for longer words (5+ letters) to catch minor speech recognition errors
-    // This prevents accepting wrong final consonants on short words
-    if (t.length >= 5) {
+    // Levenshtein distance: only for longer words (5+ letters)
+    if (t.length >= 5 && r.length >= t.length - 1 && r.length <= t.length + 1) {
       const levenDist = getLevenshteinDistance(r, t);
-      const maxDist = Math.floor(t.length * 0.2); // Allow 20% character difference only for long words
-      if (levenDist <= maxDist && maxDist > 0) return true;
+      const maxDist = Math.floor(t.length * 0.2);
+      if (levenDist <= maxDist) return true;
     }
     
     return false;
   };
 
-  const getLevenshteinDistance = (str1, str2) => {
-    const track = Array(str2.length + 1).fill(null).map(() =>
-      Array(str1.length + 1).fill(null));
-    for (let i = 0; i <= str1.length; i += 1) {
-      track[0][i] = i;
-    }
-    for (let j = 0; j <= str2.length; j += 1) {
-      track[j][0] = j;
-    }
-    for (let j = 1; j <= str2.length; j += 1) {
-      for (let i = 1; i <= str1.length; i += 1) {
-        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
-        track[j][i] = Math.min(
-          track[j][i - 1] + 1,
-          track[j - 1][i] + 1,
-          track[j - 1][i - 1] + indicator
+  const getLevenshteinDistance = (s1, s2) => {
+    const len1 = s1.length;
+    const len2 = s2.length;
+    if (len1 > len2 + 1 || len2 > len1 + 1) return Infinity; // Early exit for too different lengths
+    
+    // Use single array instead of 2D for faster computation
+    let prev = Array(len2 + 1);
+    let curr = Array(len2 + 1);
+    
+    // Initialize
+    for (let j = 0; j <= len2; j++) prev[j] = j;
+    
+    for (let i = 1; i <= len1; i++) {
+      curr[0] = i;
+      for (let j = 1; j <= len2; j++) {
+        const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+        curr[j] = Math.min(
+          curr[j - 1] + 1,      // insertion
+          prev[j] + 1,          // deletion
+          prev[j - 1] + cost    // substitution
         );
       }
+      [prev, curr] = [curr, prev]; // Swap arrays
     }
-    return track[str2.length][str1.length];
+    
+    return prev[len2];
   };
 
   const handleSkip = () => {
