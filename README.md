@@ -1,2 +1,2 @@
 Final Year Project:
-This is an edcational app built for children age 4-5 to help them encode individual sounds. 
+This is an edcational app built for children age 4-5 to help them encode individual sounds and enhance young children’s foundational literacy skills of CVC segmentation and blending skills (phonemic awareness) through fun repetitive learning experiences. The app addresses the gap in existing educational tools by combining evidence-based phonics instruction with engaging gamification elements that cater to children with different learning styles (visual, auditory, kinaesthetic).
