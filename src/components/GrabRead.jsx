@@ -337,7 +337,7 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       } else {
         cableHeightRef.current += speed;
         setCableHeight(cableHeightRef.current);
-        // Update grabbed planet pos
+        // Update grabbed planet pos tightly to the claw to avoid floaty flying effect
         if (grabbedIdRef.current) {
           const tilt = clawTiltRef.current;
           const rad = (tilt * Math.PI) / 180;
@@ -346,9 +346,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
           const targetX = (clawPosRef.current - 8.2) + (offsetX / 3.4);
           const targetY = (300 - cableHeightRef.current - 110);
           planetsRef.current = planetsRef.current.map(p =>
-            p.id === grabbedIdRef.current ? { ...p, x: p.x + (targetX - p.x) * 0.5, y: p.y + (targetY - p.y) * 0.5 } : p
+            p.id === grabbedIdRef.current ? { ...p, x: targetX, y: targetY } : p
           );
-          // sync to state occasionally for smooth UI
           setPlanets([...planetsRef.current]);
         }
         requestAnimationFrame(step);
@@ -396,7 +395,15 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
       // Lock planet to claw immediately as fingers close
       grabbedIdRef.current = caught.id;
       setGrabbedId(caught.id);
-      planetsRef.current = planetsRef.current.map(p => p.id === caught.id ? { ...p, isGrabbed: true } : p);
+      const tilt = clawTiltRef.current;
+      const rad = (tilt * Math.PI) / 180;
+      const totalH = cableHeightRef.current + 65;
+      const offsetX = Math.sin(rad) * totalH;
+      const targetX = (clawPosRef.current - 8.2) + (offsetX / 3.4);
+      const targetY = (300 - cableHeightRef.current - 110);
+      planetsRef.current = planetsRef.current.map(p =>
+        p.id === caught.id ? { ...p, isGrabbed: true, x: targetX, y: targetY } : p
+      );
       setPlanets([...planetsRef.current]);
     }
 
@@ -875,8 +882,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
                   position: 'absolute', width: 14, height: 55, background: '#ef4444',
                   border: '2px solid #1e293b', borderRadius: 4, top: 12, left: 8,
                   transformOrigin: 'top center', zIndex: 70,
-                  transform: isGrabClosed ? 'rotate(105deg) translate(22px, -18px)' : 'rotate(45deg)',
-                  transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  transform: isGrabClosed ? 'rotate(70deg) translate(12px, -10px)' : 'rotate(45deg)',
+                  transition: 'transform 0.2s ease-out',
                 }}>
                   <div style={{ position: 'absolute', bottom: -5, width: 18, height: 10, background: '#ef4444', border: '2px solid #1e293b', borderTop: 0, borderRadius: '0 0 8px 8px' }} />
                 </div>
@@ -885,8 +892,8 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
                   position: 'absolute', width: 14, height: 55, background: '#ef4444',
                   border: '2px solid #1e293b', borderRadius: 4, top: 12, right: 8,
                   transformOrigin: 'top center', zIndex: 70,
-                  transform: isGrabClosed ? 'rotate(-105deg) translate(-22px, -18px)' : 'rotate(-45deg)',
-                  transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  transform: isGrabClosed ? 'rotate(-70deg) translate(-12px, -10px)' : 'rotate(-45deg)',
+                  transition: 'transform 0.2s ease-out',
                 }}>
                   <div style={{ position: 'absolute', bottom: -5, width: 18, height: 10, background: '#ef4444', border: '2px solid #1e293b', borderTop: 0, borderRadius: '0 0 8px 8px' }} />
                 </div>
@@ -895,9 +902,9 @@ export default function GrabRead({ onBack, speak, playClick = () => {}, onSettin
                   position: 'absolute', width: 14, height: 55, background: '#ef4444',
                   border: '2px solid #1e293b', borderRadius: 4, top: 15, left: 33,
                   transformOrigin: 'top center', zIndex: 45,
-                  filter: isGrabClosed ? 'brightness(1)' : 'brightness(0.7)',
-                  transform: isGrabClosed ? 'scaleY(1.4) translateY(24px)' : 'rotate(0deg) scaleY(0.7)',
-                  transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  filter: isGrabClosed ? 'brightness(1.1)' : 'brightness(0.75)',
+                  transform: isGrabClosed ? 'scaleY(1.2) translateY(18px)' : 'scaleY(0.8)',
+                  transition: 'transform 0.2s ease-out',
                 }}>
                   <div style={{ position: 'absolute', bottom: -5, width: 18, height: 10, background: '#ef4444', border: '2px solid #1e293b', borderTop: 0, borderRadius: '0 0 8px 8px' }} />
                 </div>
