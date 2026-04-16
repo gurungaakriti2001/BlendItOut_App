@@ -18,7 +18,7 @@ const VOWEL_DATA = [
   { vowel: "A", color: "#A855F7", emoji: "🍎", name: "Apple", img: "https://img.icons8.com/color/200/apple.png", example: "Apple" },
   { vowel: "E", color: "#3B82F6", emoji: "https://w7.pngwing.com/pngs/381/227/png-transparent-animals-elephants-animal-elephant-cartoon.png", name: "Elephant", img: "https://w7.pngwing.com/pngs/381/227/png-transparent-animals-elephants-animal-elephant-cartoon.png", example: "Elephant" },
   { vowel: "I", color: "#EC4899", emoji: "https://w7.pngwing.com/pngs/843/654/png-transparent-igloo-cartoon-illustration-illustration-arctic-igloo-blue-houses-igloo-cooler.png", name: "Igloo", img: "https://w7.pngwing.com/pngs/843/654/png-transparent-igloo-cartoon-illustration-illustration-arctic-igloo-blue-houses-igloo-cooler.png", example: "Igloo" },
-  { vowel: "O", color: "#F59E0B", emoji: "/images/cvc/vowelfunimages/octopus.jpg", name: "Octopus", img: "/images/cvc/vowelfunimages/octopus.jpg", example: "Octopus" },
+  { vowel: "O", color: "#F59E0B", emoji: "/images/cvc/vowelfunimages/octopus_nobg.png", name: "Octopus", img: "/images/cvc/vowelfunimages/octopus_nobg.png", example: "Octopus" },
   { vowel: "U", color: "#10B981", emoji: "https://w7.pngwing.com/pngs/220/533/png-transparent-upward-arrow-arrow-up-up-arrow.png", name: "Up", img: "https://w7.pngwing.com/pngs/220/533/png-transparent-upward-arrow-arrow-up-up-arrow.png", example: "Up" }
 ];
 
